@@ -1,4 +1,4 @@
-﻿namespace ProjetoFBD
+﻿﻿namespace ProjetoFBD
 {
     partial class LoadingPage
     {
@@ -16,6 +16,7 @@
         #region Windows Form Designer generated code
         private void InitializeComponent()
         {
+            
             this.components = new System.ComponentModel.Container();
 
             this.pbLogoFundo = new System.Windows.Forms.PictureBox();

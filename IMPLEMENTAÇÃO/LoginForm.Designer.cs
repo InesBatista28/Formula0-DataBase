@@ -1,4 +1,4 @@
-namespace ProjetoFBD // Use o seu namespace correto aqui
+namespace ProjetoFBD
 {
     partial class LoginForm : System.Windows.Forms.Form
     {
@@ -19,10 +19,11 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
         {
             // Instanciação de Componentes
             this.btnVoltar = new System.Windows.Forms.Button();
-            this.btnStaff = new System.Windows.Forms.Button(); // Tem que estar aqui!
+            this.btnStaff = new System.Windows.Forms.Button(); 
             this.btnGuest = new System.Windows.Forms.Button();
+            this.btnContinuar = new System.Windows.Forms.Button();
             this.lblTitle = new System.Windows.Forms.Label();
-            this.btnStaff.Text = "CONTINUAR"; // Texto inicial
+            this.btnStaff.Text = "CONTINUAR"; 
             this.components = new System.ComponentModel.Container();
             this.pbIcon = new System.Windows.Forms.PictureBox();
             this.pnlStaffFields = new System.Windows.Forms.Panel();
@@ -36,23 +37,33 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
             this.pnlStaffFields.SuspendLayout();
             this.SuspendLayout();
 
-            // --- Configuração dos Botões de Ação ---
-            // No InitializeComponent()
-
-            // btnVoltar (CANCELAR/VOLTAR)
-            this.btnStaff.Location = new System.Drawing.Point(260, 340);
-            this.btnVoltar.BackColor = System.Drawing.Color.Gray; // Cor Cinza
+            // --- Configuração dos Botões ---
+            this.btnVoltar.BackColor = System.Drawing.Color.Gray; 
             this.btnVoltar.FlatAppearance.BorderSize = 0;
             this.btnVoltar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnVoltar.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.btnVoltar.ForeColor = System.Drawing.Color.White;
             this.btnVoltar.Cursor = System.Windows.Forms.Cursors.Hand; 
-            this.btnVoltar.Location = new System.Drawing.Point(50, 340); // Posicionado abaixo dos campos
+            this.btnVoltar.Location = new System.Drawing.Point(60, 270);
             this.btnVoltar.Name = "btnVoltar";
             this.btnVoltar.Size = new System.Drawing.Size(180, 50); 
-            this.btnVoltar.TabIndex = 7; // Novo TabIndex
-            this.btnVoltar.Text = "VOLTAR"; // Pode ser CANCELAR ou VOLTAR
+            this.btnVoltar.TabIndex = 7; 
+            this.btnVoltar.Text = "VOLTAR"; 
             this.btnVoltar.UseVisualStyleBackColor = false;
+
+            this.btnContinuar.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right))); // Ancorar!
+            this.btnContinuar.BackColor = System.Drawing.Color.FromArgb(192, 0, 0); 
+            this.btnContinuar.FlatAppearance.BorderSize = 0;
+            this.btnContinuar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnContinuar.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnContinuar.ForeColor = System.Drawing.Color.White;
+            this.btnContinuar.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnContinuar.Location = new System.Drawing.Point(250, 340); 
+            this.btnContinuar.Name = "btnContinuar";
+            this.btnContinuar.Size = new System.Drawing.Size(180, 50);
+            this.btnContinuar.Text = "CONTINUAR";
+            this.btnContinuar.UseVisualStyleBackColor = false;
+            this.btnContinuar.Visible = false; 
 
             // btnStaff
             this.btnStaff.BackColor = System.Drawing.Color.FromArgb(192, 0, 0); 
@@ -60,21 +71,21 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
             this.btnStaff.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnStaff.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.btnStaff.ForeColor = System.Drawing.Color.White;
-            this.btnStaff.Cursor = System.Windows.Forms.Cursors.Hand; // Novo: Cursor de mão
-            this.btnStaff.Location = new System.Drawing.Point(60, 270); // Ajuste a posição para maior largura
-            this.btnStaff.Size = new System.Drawing.Size(180, 50); // Maior largura
+            this.btnStaff.Cursor = System.Windows.Forms.Cursors.Hand; 
+            this.btnStaff.Location = new System.Drawing.Point(60, 270); 
+            this.btnStaff.Size = new System.Drawing.Size(180, 50); 
             this.btnStaff.Text = "STAFF";
             this.btnStaff.UseVisualStyleBackColor = false;
 
             // btnGuest
-            this.btnGuest.BackColor = System.Drawing.Color.FromArgb(255, 50, 50); // Vermelho ligeiramente diferente
+            this.btnGuest.BackColor = System.Drawing.Color.FromArgb(255, 50, 50);
             this.btnGuest.FlatAppearance.BorderSize = 0;
             this.btnGuest.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnGuest.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.btnGuest.ForeColor = System.Drawing.Color.White;
-            this.btnGuest.Cursor = System.Windows.Forms.Cursors.Hand; // Novo: Cursor de mão
+            this.btnGuest.Cursor = System.Windows.Forms.Cursors.Hand; 
             this.btnGuest.Location = new System.Drawing.Point(260, 270);
-            this.btnGuest.Size = new System.Drawing.Size(180, 50); // Maior largura
+            this.btnGuest.Size = new System.Drawing.Size(180, 50);
             this.btnGuest.Text = "GUEST";
             this.btnGuest.UseVisualStyleBackColor = false;
 
@@ -104,24 +115,24 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
             this.pnlStaffFields.Name = "pnlStaffFields";
             this.pnlStaffFields.Size = new System.Drawing.Size(360, 80);
             this.pnlStaffFields.TabIndex = 4;
-            this.pnlStaffFields.Visible = false; // INICIALMENTE INVISÍVEL
+            this.pnlStaffFields.Visible = false; 
 
-            this.lblUsername.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point); // Negrito
+            this.lblUsername.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.lblUsername.AutoSize = true;
             this.lblUsername.Location = new System.Drawing.Point(10, 10);
             this.lblUsername.Name = "lblUsername";
             this.lblUsername.Size = new System.Drawing.Size(75, 20);
             this.lblUsername.Text = "STAFF ID:";
 
-            this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle; // Novo: Borda Flat
-            this.txtUsername.BackColor = System.Drawing.Color.FromArgb(250, 250, 250); // Fundo quase branco
+            this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle; 
+            this.txtUsername.BackColor = System.Drawing.Color.FromArgb(250, 250, 250); 
             this.txtUsername.Location = new System.Drawing.Point(100, 7);
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(240, 27);
             this.txtUsername.TabIndex = 5;
 
-            this.txtPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle; // Novo: Borda Flat
-            this.txtPassword.BackColor = System.Drawing.Color.FromArgb(250, 250, 250); // Fundo quase branco
+            this.txtPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle; 
+            this.txtPassword.BackColor = System.Drawing.Color.FromArgb(250, 250, 250); 
             this.lblPassword.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point); // Negrito
             this.lblPassword.AutoSize = true;
             this.lblPassword.Location = new System.Drawing.Point(10, 45);
@@ -136,8 +147,8 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
             this.txtPassword.UseSystemPasswordChar = true;
 
             // --- Configuração do Formulário ---
-            this.BackColor = System.Drawing.Color.FromArgb(245, 245, 245); // Cinza muito claro, quase branco
-            this.ClientSize = new System.Drawing.Size(480, 400); // Ajuste se necessário devido aos botões maiores
+            this.BackColor = System.Drawing.Color.FromArgb(245, 245, 245); 
+            this.ClientSize = new System.Drawing.Size(480, 400); 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.pnlStaffFields);
@@ -146,6 +157,7 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
             this.Controls.Add(this.btnGuest);
             this.Controls.Add(this.btnStaff);
             this.Controls.Add(this.btnVoltar);
+            this.Controls.Add(this.btnContinuar);
             this.Name = "LoginForm";
             this.Text = "Login";
 
@@ -169,6 +181,7 @@ namespace ProjetoFBD // Use o seu namespace correto aqui
         private System.Windows.Forms.Label lblPassword;
         private System.Windows.Forms.Panel pnlStaffFields;
         private System.Windows.Forms.Button btnVoltar;
+        private System.Windows.Forms.Button btnContinuar; 
     }
     
 }
