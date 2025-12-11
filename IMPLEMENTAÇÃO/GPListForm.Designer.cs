@@ -1,6 +1,6 @@
 namespace ProjetoFBD
 {
-    partial class SeasonForm
+    partial class GPListForm
     {
         /// <summary>
         /// Required designer variable.
@@ -30,10 +30,10 @@ namespace ProjetoFBD
         {
             this.SuspendLayout();
             // 
-            // SeasonForm
+            // GPListForm
             // 
             this.ClientSize = new System.Drawing.Size(300, 300);
-            this.Name = "SeasonForm";
+            this.Name = "GPListForm";
             this.ResumeLayout(false);
         }
 
