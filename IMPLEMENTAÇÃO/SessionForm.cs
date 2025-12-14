@@ -23,7 +23,7 @@ namespace ProjetoFBD
             this.gpName = grandPrixName;
             
             this.Text = $"Sessions - {gpName}";
-            this.Size = new Size(1000, 600);
+            this.Size = new Size(1400, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             SetupLayout();
@@ -50,7 +50,7 @@ namespace ProjetoFBD
             {
                 Name = "dgvSessions",
                 Location = new Point(20, 70),
-                Size = new Size(940, 350),
+                Size = new Size(1340, 350),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 ReadOnly = false
             };
@@ -72,6 +72,8 @@ namespace ProjetoFBD
             Button btnRefresh = CreateActionButton("Refresh", new Point(400, 5));
             Button btnViewResults = CreateActionButton("View Results", new Point(520, 5), Color.FromArgb(0, 102, 204));
             Button btnAddPenalty = CreateActionButton("Add Penalty", new Point(660, 5), Color.FromArgb(255, 140, 0));
+            Button btnViewPitstops = CreateActionButton("View Pitstops", new Point(800, 5), Color.FromArgb(128, 0, 128));
+            Button btnViewPenalties = CreateActionButton("View Penalties", new Point(940, 5), Color.FromArgb(178, 34, 34));
             
             btnSave.Click += btnSave_Click;
             btnAdd.Click += btnAdd_Click;
@@ -79,6 +81,8 @@ namespace ProjetoFBD
             btnRefresh.Click += btnRefresh_Click;
             btnViewResults.Click += btnViewResults_Click;
             btnAddPenalty.Click += btnAddPenalty_Click;
+            btnViewPitstops.Click += btnViewPitstops_Click;
+            btnViewPenalties.Click += btnViewPenalties_Click;
 
             pnlStaffActions.Controls.Add(btnSave);
             pnlStaffActions.Controls.Add(btnAdd);
@@ -86,8 +90,10 @@ namespace ProjetoFBD
             pnlStaffActions.Controls.Add(btnRefresh);
             pnlStaffActions.Controls.Add(btnViewResults);
             pnlStaffActions.Controls.Add(btnAddPenalty);
+            pnlStaffActions.Controls.Add(btnViewPitstops);
+            pnlStaffActions.Controls.Add(btnViewPenalties);
             
-            pnlStaffActions.Size = new Size(920, 50);
+            pnlStaffActions.Size = new Size(1200, 50);
 
             // Role-Based Access Control
             if (this.userRole == "Staff")
@@ -389,6 +395,44 @@ namespace ProjetoFBD
             else
             {
                 LoadSessionData();
+            }
+        }
+
+        private void btnViewPitstops_Click(object? sender, EventArgs e)
+        {
+            if (dgvSessions == null || !IsRowSelected(dgvSessions, "session"))
+                return;
+
+            var selectedRow = dgvSessions.SelectedRows[0];
+            string? sessionName = selectedRow.Cells["NomeSessão"].Value?.ToString();
+
+            if (!string.IsNullOrEmpty(sessionName))
+            {
+                PitstopViewerDialog pitstopDialog = new PitstopViewerDialog(sessionName, gpName);
+                pitstopDialog.ShowDialog();
+            }
+            else
+            {
+                ShowWarning("Please select a valid session.");
+            }
+        }
+
+        private void btnViewPenalties_Click(object? sender, EventArgs e)
+        {
+            if (dgvSessions == null || !IsRowSelected(dgvSessions, "session"))
+                return;
+
+            var selectedRow = dgvSessions.SelectedRows[0];
+            string? sessionName = selectedRow.Cells["NomeSessão"].Value?.ToString();
+
+            if (!string.IsNullOrEmpty(sessionName))
+            {
+                PenaltyViewerDialog penaltyDialog = new PenaltyViewerDialog(sessionName, gpName);
+                penaltyDialog.ShowDialog();
+            }
+            else
+            {
+                ShowWarning("Please select a valid session.");
             }
         }
 
@@ -830,6 +874,931 @@ namespace ProjetoFBD
             {
                 return Display;
             }
+        }
+    }
+
+    // ============================================================================
+    // PITSTOP VIEWER DIALOG
+    // ============================================================================
+    public class PitstopViewerDialog : Form
+    {
+        private DataGridView? dgvPitstops;
+        private ComboBox? cmbDriver;
+        private ComboBox? cmbTeam;
+        private Button? btnClearFilters;
+        private DataTable? pitstopTable;
+        private string sessionName;
+        private string gpName;
+
+        public PitstopViewerDialog(string sessionName, string gpName)
+        {
+            this.sessionName = sessionName;
+            this.gpName = gpName;
+
+            this.Text = $"Pitstops - {sessionName}";
+            this.Size = new Size(1200, 600);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            SetupUI();
+            LoadDriversAndTeams();
+            LoadPitstops();
+        }
+
+        private void SetupUI()
+        {
+            Label lblTitle = new Label
+            {
+                Text = $"Pitstops - {sessionName}",
+                Location = new Point(20, 20),
+                Size = new Size(600, 30),
+                Font = new Font("Arial", 16, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            this.Controls.Add(lblTitle);
+
+            // Filter Panel
+            Panel pnlFilters = new Panel
+            {
+                Location = new Point(20, 60),
+                Size = new Size(1140, 50),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            this.Controls.Add(pnlFilters);
+
+            Label lblDriver = new Label
+            {
+                Text = "Driver:",
+                Location = new Point(10, 15),
+                Size = new Size(60, 20)
+            };
+            pnlFilters.Controls.Add(lblDriver);
+
+            cmbDriver = new ComboBox
+            {
+                Location = new Point(70, 12),
+                Size = new Size(300, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbDriver.SelectedIndexChanged += Filter_Changed;
+            pnlFilters.Controls.Add(cmbDriver);
+
+            Label lblTeam = new Label
+            {
+                Text = "Team:",
+                Location = new Point(390, 15),
+                Size = new Size(50, 20)
+            };
+            pnlFilters.Controls.Add(lblTeam);
+
+            cmbTeam = new ComboBox
+            {
+                Location = new Point(445, 12),
+                Size = new Size(250, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbTeam.SelectedIndexChanged += Filter_Changed;
+            pnlFilters.Controls.Add(cmbTeam);
+
+            btnClearFilters = new Button
+            {
+                Text = "Clear Filters",
+                Location = new Point(720, 10),
+                Size = new Size(120, 30),
+                BackColor = Color.FromArgb(220, 20, 20),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnClearFilters.FlatAppearance.BorderSize = 0;
+            btnClearFilters.Click += BtnClearFilters_Click;
+            pnlFilters.Controls.Add(btnClearFilters);
+
+            // DataGridView
+            dgvPitstops = new DataGridView
+            {
+                Location = new Point(20, 120),
+                Size = new Size(1140, 400),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                AutoGenerateColumns = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible = false
+            };
+            this.Controls.Add(dgvPitstops);
+
+            Button btnAddPitstop = new Button
+            {
+                Text = "Add Pitstop",
+                Location = new Point(900, 530),
+                Size = new Size(120, 35),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.FromArgb(220, 20, 20),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnAddPitstop.FlatAppearance.BorderSize = 0;
+            btnAddPitstop.Click += BtnAddPitstop_Click;
+            this.Controls.Add(btnAddPitstop);
+
+            Button btnClose = new Button
+            {
+                Text = "Close",
+                Location = new Point(1040, 530),
+                Size = new Size(120, 35),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.Gray,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DialogResult = DialogResult.OK
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
+            this.Controls.Add(btnClose);
+        }
+
+        private void LoadDriversAndTeams()
+        {
+            if (cmbDriver == null || cmbTeam == null) return;
+            
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+
+                    // Load Drivers
+                    cmbDriver.Items.Add("-- All Drivers --");
+                    string driverQuery = @"
+                        SELECT DISTINCT m.Nome, p.Abreviação
+                        FROM Pitstop ps
+                        INNER JOIN Piloto p ON ps.ID_Piloto = p.ID_Piloto
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        WHERE ps.NomeSessão = @SessionName AND ps.NomeGP = @GPName
+                        ORDER BY m.Nome";
+                    
+                    SqlCommand cmdDriver = new SqlCommand(driverQuery, conn);
+                    cmdDriver.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmdDriver.Parameters.AddWithValue("@GPName", gpName);
+                    SqlDataReader readerDriver = cmdDriver.ExecuteReader();
+                    while (readerDriver.Read())
+                    {
+                        string nome = readerDriver.IsDBNull(0) ? "Unknown" : readerDriver.GetString(0);
+                        string code = readerDriver.IsDBNull(1) ? "???" : readerDriver.GetString(1);
+                        cmbDriver.Items.Add($"{code} - {nome}");
+                    }
+                    readerDriver.Close();
+                    cmbDriver.SelectedIndex = 0;
+
+                    // Load Teams
+                    cmbTeam.Items.Add("-- All Teams --");
+                    string teamQuery = @"
+                        SELECT DISTINCT e.Nome
+                        FROM Pitstop ps
+                        INNER JOIN Piloto p ON ps.ID_Piloto = p.ID_Piloto
+                        INNER JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        WHERE ps.NomeSessão = @SessionName AND ps.NomeGP = @GPName
+                        ORDER BY e.Nome";
+                    
+                    SqlCommand cmdTeam = new SqlCommand(teamQuery, conn);
+                    cmdTeam.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmdTeam.Parameters.AddWithValue("@GPName", gpName);
+                    SqlDataReader readerTeam = cmdTeam.ExecuteReader();
+                    while (readerTeam.Read())
+                    {
+                        cmbTeam.Items.Add(readerTeam["Nome"].ToString() ?? "");
+                    }
+                    readerTeam.Close();
+                    cmbTeam.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading filters: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadPitstops(string? driverFilter = null, string? teamFilter = null)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT 
+                            ps.ID_Pitstop,
+                            ps.NumeroVolta,
+                            ps.DuraçãoParagem,
+                            ps.DuraçãoPitlane,
+                            p.Abreviação AS DriverCode,
+                            m.Nome AS DriverName,
+                            e.Nome AS TeamName,
+                            r.PosiçãoFinal AS Position
+                        FROM Pitstop ps
+                        INNER JOIN Piloto p ON ps.ID_Piloto = p.ID_Piloto
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        INNER JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        LEFT JOIN Resultados r ON r.ID_Piloto = ps.ID_Piloto AND r.NomeSessão = ps.NomeSessão AND r.NomeGP = ps.NomeGP
+                        WHERE ps.NomeSessão = @SessionName AND ps.NomeGP = @GPName";
+
+                    if (!string.IsNullOrEmpty(driverFilter))
+                    {
+                        query += " AND p.Abreviação = @DriverCode";
+                    }
+
+                    if (!string.IsNullOrEmpty(teamFilter))
+                    {
+                        query += " AND e.Nome = @TeamName";
+                    }
+
+                    query += " ORDER BY ps.NumeroVolta ASC";
+
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmd.Parameters.AddWithValue("@GPName", gpName);
+
+                    if (!string.IsNullOrEmpty(driverFilter))
+                    {
+                        cmd.Parameters.AddWithValue("@DriverCode", driverFilter);
+                    }
+
+                    if (!string.IsNullOrEmpty(teamFilter))
+                    {
+                        cmd.Parameters.AddWithValue("@TeamName", teamFilter);
+                    }
+
+                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                    pitstopTable = new DataTable();
+                    adapter.Fill(pitstopTable);
+
+                    if (dgvPitstops == null) return;
+                    
+                    dgvPitstops.DataSource = pitstopTable;
+
+                    // Configure columns
+                    dgvPitstops.Refresh();
+                    Application.DoEvents();
+
+                    if (dgvPitstops.Columns.Contains("ID_Pitstop") && dgvPitstops.Columns["ID_Pitstop"] != null)
+                    {
+                        dgvPitstops.Columns["ID_Pitstop"]!.HeaderText = "ID";
+                        dgvPitstops.Columns["ID_Pitstop"]!.Width = 60;
+                    }
+                    if (dgvPitstops.Columns.Contains("NumeroVolta") && dgvPitstops.Columns["NumeroVolta"] != null)
+                        dgvPitstops.Columns["NumeroVolta"]!.HeaderText = "Lap";
+                    if (dgvPitstops.Columns.Contains("DuraçãoParagem") && dgvPitstops.Columns["DuraçãoParagem"] != null)
+                        dgvPitstops.Columns["DuraçãoParagem"]!.HeaderText = "Stop Duration";
+                    if (dgvPitstops.Columns.Contains("DuraçãoPitlane") && dgvPitstops.Columns["DuraçãoPitlane"] != null)
+                        dgvPitstops.Columns["DuraçãoPitlane"]!.HeaderText = "Pitlane Duration";
+                    if (dgvPitstops.Columns.Contains("DriverCode") && dgvPitstops.Columns["DriverCode"] != null)
+                        dgvPitstops.Columns["DriverCode"]!.HeaderText = "Driver Code";
+                    if (dgvPitstops.Columns.Contains("DriverName") && dgvPitstops.Columns["DriverName"] != null)
+                        dgvPitstops.Columns["DriverName"]!.HeaderText = "Driver";
+                    if (dgvPitstops.Columns.Contains("TeamName") && dgvPitstops.Columns["TeamName"] != null)
+                        dgvPitstops.Columns["TeamName"]!.HeaderText = "Team";
+                    if (dgvPitstops.Columns.Contains("Position") && dgvPitstops.Columns["Position"] != null)
+                        dgvPitstops.Columns["Position"]!.HeaderText = "Final Position";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading pitstops: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void Filter_Changed(object? sender, EventArgs e)
+        {
+            string? driverFilter = null;
+            string? teamFilter = null;
+
+            if (cmbDriver != null && cmbDriver.SelectedIndex > 0 && cmbDriver.SelectedItem != null)
+            {
+                string? selected = cmbDriver.SelectedItem.ToString();
+                if (selected != null && selected.Contains(" - "))
+                {
+                    driverFilter = selected.Split(new[] { " - " }, StringSplitOptions.None)[0];
+                }
+            }
+
+            if (cmbTeam != null && cmbTeam.SelectedIndex > 0 && cmbTeam.SelectedItem != null)
+            {
+                teamFilter = cmbTeam.SelectedItem.ToString();
+            }
+
+            LoadPitstops(driverFilter, teamFilter);
+        }
+
+        private void BtnClearFilters_Click(object? sender, EventArgs e)
+        {
+            if (cmbDriver != null)
+                cmbDriver.SelectedIndex = 0;
+            if (cmbTeam != null)
+                cmbTeam.SelectedIndex = 0;
+        }
+
+        private void BtnAddPitstop_Click(object? sender, EventArgs e)
+        {
+            using (var dialog = new AddPitstopDialog(sessionName, gpName))
+            {
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    LoadPitstops(); // Refresh the list
+                }
+            }
+        }
+    }
+
+    // ============================================================================
+    // ADD PITSTOP DIALOG
+    // ============================================================================
+    public class AddPitstopDialog : Form
+    {
+        private ComboBox? cmbDriver;
+        private NumericUpDown? nudLap;
+        private MaskedTextBox? txtStopDuration;
+        private MaskedTextBox? txtPitlaneDuration;
+        
+        private string sessionName;
+        private string gpName;
+
+        public AddPitstopDialog(string sessionName, string gpName)
+        {
+            this.sessionName = sessionName;
+            this.gpName = gpName;
+            
+            InitializeUI();
+            LoadDrivers();
+        }
+
+        private void InitializeUI()
+        {
+            this.Text = $"Add Pitstop - {sessionName}";
+            this.Size = new Size(450, 350);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            Label lblTitle = new Label
+            {
+                Text = $"Add Pitstop - {sessionName}",
+                Location = new Point(20, 20),
+                Size = new Size(400, 25),
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            this.Controls.Add(lblTitle);
+
+            // Driver
+            Label lblDriver = new Label
+            {
+                Text = "Driver:",
+                Location = new Point(20, 60),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblDriver);
+
+            cmbDriver = new ComboBox
+            {
+                Location = new Point(150, 57),
+                Size = new Size(260, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            this.Controls.Add(cmbDriver);
+
+            // Lap Number
+            Label lblLap = new Label
+            {
+                Text = "Lap Number:",
+                Location = new Point(20, 100),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblLap);
+
+            nudLap = new NumericUpDown
+            {
+                Location = new Point(150, 97),
+                Size = new Size(100, 25),
+                Minimum = 1,
+                Maximum = 999,
+                Value = 1
+            };
+            this.Controls.Add(nudLap);
+
+            // Stop Duration
+            Label lblStopDuration = new Label
+            {
+                Text = "Stop Duration:",
+                Location = new Point(20, 140),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblStopDuration);
+
+            txtStopDuration = new MaskedTextBox
+            {
+                Location = new Point(150, 137),
+                Size = new Size(100, 25),
+                Mask = "00:00:00.000",
+                Text = "00:00:00.000"
+            };
+            this.Controls.Add(txtStopDuration);
+
+            Label lblStopFormat = new Label
+            {
+                Text = "(HH:MM:SS.mmm)",
+                Location = new Point(260, 140),
+                Size = new Size(150, 20),
+                ForeColor = Color.Gray
+            };
+            this.Controls.Add(lblStopFormat);
+
+            // Pitlane Duration
+            Label lblPitlaneDuration = new Label
+            {
+                Text = "Pitlane Duration:",
+                Location = new Point(20, 180),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblPitlaneDuration);
+
+            txtPitlaneDuration = new MaskedTextBox
+            {
+                Location = new Point(150, 177),
+                Size = new Size(100, 25),
+                Mask = "00:00:00.000",
+                Text = "00:00:00.000"
+            };
+            this.Controls.Add(txtPitlaneDuration);
+
+            Label lblPitlaneFormat = new Label
+            {
+                Text = "(HH:MM:SS.mmm)",
+                Location = new Point(260, 180),
+                Size = new Size(150, 20),
+                ForeColor = Color.Gray
+            };
+            this.Controls.Add(lblPitlaneFormat);
+
+            // Buttons
+            Button btnOK = new Button
+            {
+                Text = "Add Pitstop",
+                Location = new Point(200, 250),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(220, 20, 20),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnOK.FlatAppearance.BorderSize = 0;
+            btnOK.Click += BtnOK_Click;
+            this.Controls.Add(btnOK);
+
+            Button btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(310, 250),
+                Size = new Size(100, 35),
+                BackColor = Color.Gray,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DialogResult = DialogResult.Cancel
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+            this.Controls.Add(btnCancel);
+
+            this.AcceptButton = btnOK;
+            this.CancelButton = btnCancel;
+        }
+
+        private void LoadDrivers()
+        {
+            if (cmbDriver == null) return;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        SELECT p.ID_Piloto, p.NumeroPermanente, p.Abreviação, m.Nome, e.Nome AS Team
+                        FROM Piloto p
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        LEFT JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        ORDER BY m.Nome";
+                    
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(0);
+                        string num = reader.IsDBNull(1) ? "?" : reader.GetInt32(1).ToString();
+                        string code = reader.IsDBNull(2) ? "???" : reader.GetString(2);
+                        string name = reader.IsDBNull(3) ? "Unknown" : reader.GetString(3);
+                        string team = reader.IsDBNull(4) ? "No Team" : reader.GetString(4);
+                        
+                        cmbDriver.Items.Add(new DriverItem 
+                        { 
+                            ID = id, 
+                            Number = num, 
+                            Code = code, 
+                            Name = name, 
+                            Team = team 
+                        });
+                    }
+                    
+                    if (cmbDriver.Items.Count > 0)
+                        cmbDriver.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading drivers: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnOK_Click(object? sender, EventArgs e)
+        {
+            if (cmbDriver == null || cmbDriver.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a driver.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (nudLap == null || nudLap.Value < 1)
+            {
+                MessageBox.Show("Please enter a valid lap number.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                var driver = (DriverItem)cmbDriver.SelectedItem;
+                int lap = (int)nudLap.Value;
+                TimeSpan stopDuration = TimeSpan.Parse(txtStopDuration?.Text ?? "00:00:00");
+                TimeSpan pitlaneDuration = TimeSpan.Parse(txtPitlaneDuration?.Text ?? "00:00:00");
+
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+                    string insertQuery = @"
+                        INSERT INTO Pitstop (NumeroVolta, DuraçãoParagem, DuraçãoPitlane, NomeSessão, NomeGP, ID_Piloto)
+                        VALUES (@Lap, @StopDuration, @PitlaneDuration, @Session, @GP, @Driver)";
+                    
+                    SqlCommand cmd = new SqlCommand(insertQuery, conn);
+                    cmd.Parameters.AddWithValue("@Lap", lap);
+                    cmd.Parameters.AddWithValue("@StopDuration", stopDuration);
+                    cmd.Parameters.AddWithValue("@PitlaneDuration", pitlaneDuration);
+                    cmd.Parameters.AddWithValue("@Session", sessionName);
+                    cmd.Parameters.AddWithValue("@GP", gpName);
+                    cmd.Parameters.AddWithValue("@Driver", driver.ID);
+                    
+                    cmd.ExecuteNonQuery();
+                    
+                    MessageBox.Show($"Pitstop added successfully!\n\nDriver: {driver.Name}\nLap: {lap}", 
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+            }
+            catch (FormatException)
+            {
+                MessageBox.Show("Invalid time format. Please use HH:MM:SS.mmm format.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (SqlException sqlEx)
+            {
+                MessageBox.Show($"Database error: {sqlEx.Message}\n\nError Number: {sqlEx.Number}", 
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding pitstop: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private class DriverItem
+        {
+            public int ID { get; set; }
+            public string Number { get; set; } = "";
+            public string Code { get; set; } = "";
+            public string Name { get; set; } = "";
+            public string Team { get; set; } = "";
+
+            public override string ToString()
+            {
+                return $"#{Number} {Code} - {Name} ({Team})";
+            }
+        }
+    }
+
+    // ============================================================================
+    // PENALTY VIEWER DIALOG
+    // ============================================================================
+    public class PenaltyViewerDialog : Form
+    {
+        private DataGridView? dgvPenalties;
+        private ComboBox? cmbDriver;
+        private ComboBox? cmbTeam;
+        private Button? btnClearFilters;
+        private DataTable? penaltyTable;
+        private string sessionName;
+        private string gpName;
+
+        public PenaltyViewerDialog(string sessionName, string gpName)
+        {
+            this.sessionName = sessionName;
+            this.gpName = gpName;
+
+            this.Text = $"Penalties - {sessionName}";
+            this.Size = new Size(1200, 600);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            SetupUI();
+            LoadDriversAndTeams();
+            LoadPenalties();
+        }
+
+        private void SetupUI()
+        {
+            Label lblTitle = new Label
+            {
+                Text = $"Penalties - {sessionName}",
+                Location = new Point(20, 20),
+                Size = new Size(600, 30),
+                Font = new Font("Arial", 16, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            this.Controls.Add(lblTitle);
+
+            // Filter Panel
+            Panel pnlFilters = new Panel
+            {
+                Location = new Point(20, 60),
+                Size = new Size(1140, 50),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            this.Controls.Add(pnlFilters);
+
+            Label lblDriver = new Label
+            {
+                Text = "Driver:",
+                Location = new Point(10, 15),
+                Size = new Size(60, 20)
+            };
+            pnlFilters.Controls.Add(lblDriver);
+
+            cmbDriver = new ComboBox
+            {
+                Location = new Point(70, 12),
+                Size = new Size(300, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbDriver.SelectedIndexChanged += Filter_Changed;
+            pnlFilters.Controls.Add(cmbDriver);
+
+            Label lblTeam = new Label
+            {
+                Text = "Team:",
+                Location = new Point(390, 15),
+                Size = new Size(50, 20)
+            };
+            pnlFilters.Controls.Add(lblTeam);
+
+            cmbTeam = new ComboBox
+            {
+                Location = new Point(445, 12),
+                Size = new Size(250, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbTeam.SelectedIndexChanged += Filter_Changed;
+            pnlFilters.Controls.Add(cmbTeam);
+
+            btnClearFilters = new Button
+            {
+                Text = "Clear Filters",
+                Location = new Point(720, 10),
+                Size = new Size(120, 30),
+                BackColor = Color.FromArgb(220, 20, 20),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnClearFilters.FlatAppearance.BorderSize = 0;
+            btnClearFilters.Click += BtnClearFilters_Click;
+            pnlFilters.Controls.Add(btnClearFilters);
+
+            // DataGridView
+            dgvPenalties = new DataGridView
+            {
+                Location = new Point(20, 120),
+                Size = new Size(1140, 400),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                AutoGenerateColumns = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible = false
+            };
+            this.Controls.Add(dgvPenalties);
+
+            Button btnClose = new Button
+            {
+                Text = "Close",
+                Location = new Point(1040, 530),
+                Size = new Size(120, 35),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.Gray,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DialogResult = DialogResult.OK
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
+            this.Controls.Add(btnClose);
+        }
+
+        private void LoadDriversAndTeams()
+        {
+            if (cmbDriver == null || cmbTeam == null) return;
+            
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+
+                    // Load Drivers
+                    cmbDriver.Items.Add("-- All Drivers --");
+                    string driverQuery = @"
+                        SELECT DISTINCT m.Nome, p.Abreviação
+                        FROM Penalizações pen
+                        INNER JOIN Piloto p ON pen.ID_Piloto = p.ID_Piloto
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        WHERE pen.NomeSessão = @SessionName AND pen.NomeGP = @GPName
+                        ORDER BY m.Nome";
+                    
+                    SqlCommand cmdDriver = new SqlCommand(driverQuery, conn);
+                    cmdDriver.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmdDriver.Parameters.AddWithValue("@GPName", gpName);
+                    SqlDataReader readerDriver = cmdDriver.ExecuteReader();
+                    while (readerDriver.Read())
+                    {
+                        string nome = readerDriver.IsDBNull(0) ? "Unknown" : readerDriver.GetString(0);
+                        string code = readerDriver.IsDBNull(1) ? "???" : readerDriver.GetString(1);
+                        cmbDriver.Items.Add($"{code} - {nome}");
+                    }
+                    readerDriver.Close();
+                    cmbDriver.SelectedIndex = 0;
+
+                    // Load Teams
+                    cmbTeam.Items.Add("-- All Teams --");
+                    string teamQuery = @"
+                        SELECT DISTINCT e.Nome
+                        FROM Penalizações pen
+                        INNER JOIN Piloto p ON pen.ID_Piloto = p.ID_Piloto
+                        INNER JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        WHERE pen.NomeSessão = @SessionName AND pen.NomeGP = @GPName
+                        ORDER BY e.Nome";
+                    
+                    SqlCommand cmdTeam = new SqlCommand(teamQuery, conn);
+                    cmdTeam.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmdTeam.Parameters.AddWithValue("@GPName", gpName);
+                    SqlDataReader readerTeam = cmdTeam.ExecuteReader();
+                    while (readerTeam.Read())
+                    {
+                        cmbTeam.Items.Add(readerTeam["Nome"].ToString() ?? "");
+                    }
+                    readerTeam.Close();
+                    cmbTeam.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading filters: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadPenalties(string? driverFilter = null, string? teamFilter = null)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT 
+                            pen.ID_Penalização,
+                            pen.TipoPenalização,
+                            pen.Motivo,
+                            p.Abreviação AS DriverCode,
+                            m.Nome AS DriverName,
+                            e.Nome AS TeamName
+                        FROM Penalizações pen
+                        LEFT JOIN Piloto p ON pen.ID_Piloto = p.ID_Piloto
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        LEFT JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        WHERE pen.NomeSessão = @SessionName AND pen.NomeGP = @GPName";
+
+                    if (!string.IsNullOrEmpty(driverFilter))
+                    {
+                        query += " AND p.Abreviação = @DriverCode";
+                    }
+
+                    if (!string.IsNullOrEmpty(teamFilter))
+                    {
+                        query += " AND e.Nome = @TeamName";
+                    }
+
+                    query += " ORDER BY pen.ID_Penalização ASC";
+
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@SessionName", sessionName);
+                    cmd.Parameters.AddWithValue("@GPName", gpName);
+
+                    if (!string.IsNullOrEmpty(driverFilter))
+                    {
+                        cmd.Parameters.AddWithValue("@DriverCode", driverFilter);
+                    }
+
+                    if (!string.IsNullOrEmpty(teamFilter))
+                    {
+                        cmd.Parameters.AddWithValue("@TeamName", teamFilter);
+                    }
+
+                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                    penaltyTable = new DataTable();
+                    adapter.Fill(penaltyTable);
+
+                    if (dgvPenalties == null) return;
+                    
+                    dgvPenalties.DataSource = penaltyTable;
+
+                    // Configure columns
+                    dgvPenalties.Refresh();
+                    Application.DoEvents();
+
+                    if (dgvPenalties.Columns.Contains("ID_Penalização") && dgvPenalties.Columns["ID_Penalização"] != null)
+                    {
+                        dgvPenalties.Columns["ID_Penalização"]!.HeaderText = "ID";
+                        dgvPenalties.Columns["ID_Penalização"]!.Width = 60;
+                    }
+                    if (dgvPenalties.Columns.Contains("TipoPenalização") && dgvPenalties.Columns["TipoPenalização"] != null)
+                        dgvPenalties.Columns["TipoPenalização"]!.HeaderText = "Penalty Type";
+                    if (dgvPenalties.Columns.Contains("Motivo") && dgvPenalties.Columns["Motivo"] != null)
+                        dgvPenalties.Columns["Motivo"]!.HeaderText = "Reason";
+                    if (dgvPenalties.Columns.Contains("DriverCode") && dgvPenalties.Columns["DriverCode"] != null)
+                        dgvPenalties.Columns["DriverCode"]!.HeaderText = "Driver Code";
+                    if (dgvPenalties.Columns.Contains("DriverName") && dgvPenalties.Columns["DriverName"] != null)
+                        dgvPenalties.Columns["DriverName"]!.HeaderText = "Driver";
+                    if (dgvPenalties.Columns.Contains("TeamName") && dgvPenalties.Columns["TeamName"] != null)
+                        dgvPenalties.Columns["TeamName"]!.HeaderText = "Team";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading penalties: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void Filter_Changed(object? sender, EventArgs e)
+        {
+            string? driverFilter = null;
+            string? teamFilter = null;
+
+            if (cmbDriver != null && cmbDriver.SelectedIndex > 0 && cmbDriver.SelectedItem != null)
+            {
+                string? selected = cmbDriver.SelectedItem.ToString();
+                if (selected != null && selected.Contains(" - "))
+                {
+                    driverFilter = selected.Split(new[] { " - " }, StringSplitOptions.None)[0];
+                }
+            }
+
+            if (cmbTeam != null && cmbTeam.SelectedIndex > 0 && cmbTeam.SelectedItem != null)
+            {
+                teamFilter = cmbTeam.SelectedItem.ToString();
+            }
+
+            LoadPenalties(driverFilter, teamFilter);
+        }
+
+        private void BtnClearFilters_Click(object? sender, EventArgs e)
+        {
+            if (cmbDriver != null)
+                cmbDriver.SelectedIndex = 0;
+            if (cmbTeam != null)
+                cmbTeam.SelectedIndex = 0;
         }
     }
 }

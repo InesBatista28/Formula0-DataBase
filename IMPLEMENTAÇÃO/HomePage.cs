@@ -217,8 +217,9 @@
                 if (userRole == "Staff")
                 {
                     AddDropdownItem(pnlGrid, "Team Members", 2);
-                    // Adjust panel height for 3 items
-                    pnlGrid.Size = new Size(180, 150);
+                    AddDropdownItem(pnlGrid, "Staff Management", 3);
+                    // Adjust panel height for 4 items
+                    pnlGrid.Size = new Size(180, 200);
                 }
 
                 // Adicionar os painéis ao formulário (só se não os adicionou no Designer)
@@ -432,6 +433,10 @@
     {
         btnItem.Click += (s, e) => OpenTeamMemberForm();
     }
+    else if (parentPanel == pnlGrid && text == "Staff Management")
+    {
+        btnItem.Click += (s, e) => OpenStaffManagementForm();
+    }
 
             }
             
@@ -502,6 +507,13 @@
         pnlGrid.Visible = false;
         TeamMemberForm memberForm = new TeamMemberForm(this.userRole);
         LoadFormIntoContent(memberForm, "TEAM MEMBERS");
+    }
+    
+    private void OpenStaffManagementForm()
+    {
+        pnlGrid.Visible = false;
+        StaffManagementForm staffForm = new StaffManagementForm(this.userRole);
+        LoadFormIntoContent(staffForm, "STAFF MANAGEMENT");
     }
     
     // Single-window navigation system
