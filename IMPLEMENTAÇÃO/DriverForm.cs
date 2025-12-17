@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ProjetoFBD
 {
@@ -11,6 +12,7 @@ namespace ProjetoFBD
     {
         private DataGridView? dgvDrivers;
         private Panel? pnlStaffActions;
+        private Chart? chartDriverPoints;
         
         private string userRole;
         private SqlDataAdapter? dataAdapter;
@@ -23,11 +25,12 @@ namespace ProjetoFBD
             this.userRole = role;
             
             this.Text = "Drivers Management";
-            this.Size = new Size(1200, 700);
+            this.Size = new Size(1400, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             SetupLayout();
             LoadDriverData();
+            LoadDriverPointsChart();
         }
 
         // -------------------------------------------------------------------------
@@ -52,8 +55,8 @@ namespace ProjetoFBD
             {
                 Name = "dgvDrivers",
                 Location = new Point(20, 70),
-                Size = new Size(1140, 480),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Size = new Size(750, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AllowUserToAddRows = false,
                 ReadOnly = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
@@ -61,6 +64,57 @@ namespace ProjetoFBD
                 RowHeadersVisible = false
             };
             this.Controls.Add(dgvDrivers);
+
+            // Chart para pontos dos pilotos
+            chartDriverPoints = new Chart
+            {
+                Name = "chartDriverPoints",
+                Location = new Point(790, 70),
+                Size = new Size(580, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.White
+            };
+
+            // Configurar Chart Area
+            ChartArea chartArea = new ChartArea
+            {
+                Name = "MainArea",
+                BackColor = Color.WhiteSmoke,
+                AxisX = 
+                { 
+                    Title = "Drivers",
+                    Interval = 1,
+                    LabelStyle = { Angle = -45, Font = new Font("Arial", 8) }
+                },
+                AxisY = 
+                { 
+                    Title = "Points",
+                    LabelStyle = { Font = new Font("Arial", 9) }
+                }
+            };
+            chartDriverPoints.ChartAreas.Add(chartArea);
+
+            // Configurar Series
+            Series series = new Series
+            {
+                Name = "Points",
+                ChartType = SeriesChartType.Column,
+                Color = Color.FromArgb(220, 20, 20),
+                IsValueShownAsLabel = true,
+                Font = new Font("Arial", 8, FontStyle.Bold)
+            };
+            chartDriverPoints.Series.Add(series);
+
+            // Título do gráfico
+            Title chartTitle = new Title
+            {
+                Text = "Driver Career Points",
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            chartDriverPoints.Titles.Add(chartTitle);
+
+            this.Controls.Add(chartDriverPoints);
 
             // Painel de ações
             pnlStaffActions = new Panel
@@ -262,6 +316,7 @@ namespace ProjetoFBD
                         
                         driverTable.AcceptChanges();
                         LoadDriverData(); // Recarregar para atualizar os nomes das equipas
+                        LoadDriverPointsChart(); // Atualizar gráfico
                     }
                     catch (SqlException sqlEx)
                     {
@@ -603,6 +658,157 @@ namespace ProjetoFBD
             else
             {
                 LoadDriverData();
+            }
+            
+            LoadDriverPointsChart();
+        }
+
+        private void LoadDriverPointsChart()
+        {
+            if (chartDriverPoints == null) return;
+
+            string connectionString = DbConfig.ConnectionString;
+            
+            // Query para calcular os pontos totais de cada piloto
+            string query = @"
+                SELECT TOP 15
+                    p.Abreviação,
+                    m.Nome AS DriverName,
+                    e.Nome AS TeamName,
+                    ISNULL(SUM(r.Pontos), 0) AS TotalPoints
+                FROM Piloto p
+                INNER JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                LEFT JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                LEFT JOIN Resultados r ON p.ID_Piloto = r.ID_Piloto
+                GROUP BY p.Abreviação, m.Nome, p.NumeroPermanente, e.Nome
+                ORDER BY TotalPoints DESC, p.NumeroPermanente ASC";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            chartDriverPoints.Series["Points"].Points.Clear();
+                            
+                            // Paleta de cores vibrantes
+                            Color[] colors = new Color[]
+                            {
+                                Color.FromArgb(255, 215, 0),    // Ouro - 1º lugar
+                                Color.FromArgb(192, 192, 192),  // Prata - 2º lugar
+                                Color.FromArgb(205, 127, 50),   // Bronze - 3º lugar
+                                Color.FromArgb(220, 20, 60),    // Crimson
+                                Color.FromArgb(30, 144, 255),   // Dodger Blue
+                                Color.FromArgb(50, 205, 50),    // Lime Green
+                                Color.FromArgb(255, 140, 0),    // Dark Orange
+                                Color.FromArgb(138, 43, 226),   // Blue Violet
+                                Color.FromArgb(255, 20, 147),   // Deep Pink
+                                Color.FromArgb(0, 191, 255),    // Deep Sky Blue
+                                Color.FromArgb(255, 69, 0),     // Orange Red
+                                Color.FromArgb(34, 139, 34),    // Forest Green
+                                Color.FromArgb(220, 20, 20),    // F1 Red
+                                Color.FromArgb(128, 0, 128),    // Purple
+                                Color.FromArgb(0, 128, 128)     // Teal
+                            };
+                            
+                            int index = 0;
+                            while (reader.Read())
+                            {
+                                string abbreviation = reader["Abreviação"].ToString() ?? "???";
+                                string driverName = reader["DriverName"].ToString() ?? "Unknown";
+                                string teamName = reader["TeamName"].ToString() ?? "No Team";
+                                int totalPoints = Convert.ToInt32(reader["TotalPoints"]);
+                                
+                                // Adicionar ponto ao gráfico
+                                int pointIndex = chartDriverPoints.Series["Points"].Points.AddXY(abbreviation, totalPoints);
+                                
+                                // Aplicar cor da paleta
+                                chartDriverPoints.Series["Points"].Points[pointIndex].Color = colors[index % colors.Length];
+                                
+                                // Tooltip detalhado
+                                chartDriverPoints.Series["Points"].Points[pointIndex].ToolTip = 
+                                    $"#{index + 1} {driverName}\n{teamName}\n{totalPoints} points";
+                                
+                                // Label customizado
+                                chartDriverPoints.Series["Points"].Points[pointIndex].Label = totalPoints.ToString();
+                                chartDriverPoints.Series["Points"].Points[pointIndex].Font = new Font("Arial", 9, FontStyle.Bold);
+                                
+                                // Efeito de destaque nos top 3
+                                if (index < 3)
+                                {
+                                    chartDriverPoints.Series["Points"].Points[pointIndex].BorderWidth = 3;
+                                    chartDriverPoints.Series["Points"].Points[pointIndex].BorderColor = Color.White;
+                                }
+                                
+                                index++;
+                            }
+                        }
+                    }
+                }
+                
+                // Aplicar efeitos visuais 3D
+                if (chartDriverPoints.ChartAreas.Count > 0)
+                {
+                    chartDriverPoints.ChartAreas[0].Area3DStyle.Enable3D = true;
+                    chartDriverPoints.ChartAreas[0].Area3DStyle.Rotation = 10;
+                    chartDriverPoints.ChartAreas[0].Area3DStyle.Inclination = 15;
+                    chartDriverPoints.ChartAreas[0].Area3DStyle.LightStyle = LightStyle.Realistic;
+                    chartDriverPoints.ChartAreas[0].BackGradientStyle = GradientStyle.TopBottom;
+                    chartDriverPoints.ChartAreas[0].BackColor = Color.FromArgb(245, 245, 245);
+                    chartDriverPoints.ChartAreas[0].BackSecondaryColor = Color.White;
+                    
+                    // Grid melhorado
+                    chartDriverPoints.ChartAreas[0].AxisX.MajorGrid.LineColor = Color.FromArgb(200, 200, 200);
+                    chartDriverPoints.ChartAreas[0].AxisY.MajorGrid.LineColor = Color.FromArgb(200, 200, 200);
+                    chartDriverPoints.ChartAreas[0].AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dot;
+                }
+                
+                // Adicionar legenda
+                if (chartDriverPoints.Legends.Count == 0)
+                {
+                    Legend legend = new Legend
+                    {
+                        Name = "Legend",
+                        Docking = Docking.Bottom,
+                        Alignment = StringAlignment.Center,
+                        BackColor = Color.Transparent,
+                        Font = new Font("Arial", 8)
+                    };
+                    chartDriverPoints.Legends.Add(legend);
+                }
+                
+                // Interatividade - Clique no gráfico
+                chartDriverPoints.Click -= ChartDriverPoints_Click;
+                chartDriverPoints.Click += ChartDriverPoints_Click;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading driver points chart: {ex.Message}", "Chart Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        
+        private void ChartDriverPoints_Click(object? sender, EventArgs e)
+        {
+            if (sender is Chart chart && e is MouseEventArgs mouseEvent)
+            {
+                HitTestResult result = chart.HitTest(mouseEvent.X, mouseEvent.Y);
+                
+                if (result.ChartElementType == ChartElementType.DataPoint)
+                {
+                    DataPoint point = result.Series.Points[result.PointIndex];
+                    string driver = point.AxisLabel;
+                    double points = point.YValues[0];
+                    
+                    MessageBox.Show(
+                        $"Driver: {driver}\nPoints: {points}\n\nClick 'View Results' to see detailed race results.",
+                        "Driver Details",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
             }
         }
 

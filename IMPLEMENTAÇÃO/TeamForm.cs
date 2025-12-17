@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Linq;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ProjetoFBD
 {
@@ -11,6 +12,7 @@ namespace ProjetoFBD
     {
         private DataGridView? dgvTeams;
         private Panel? pnlStaffActions;
+        private Chart? chartTeamPoints;
         
         private string userRole;
         private SqlDataAdapter? dataAdapter;
@@ -23,11 +25,12 @@ namespace ProjetoFBD
             this.userRole = role;
             
             this.Text = "Teams Management";
-            this.Size = new Size(1200, 700);
+            this.Size = new Size(1400, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             SetupLayout();
             LoadTeamData();
+            LoadTeamPointsChart();
         }
 
         // -------------------------------------------------------------------------
@@ -52,8 +55,8 @@ namespace ProjetoFBD
             {
                 Name = "dgvTeams",
                 Location = new Point(20, 70),
-                Size = new Size(1140, 480),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Size = new Size(750, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AllowUserToAddRows = false,
                 ReadOnly = false,
                 AutoGenerateColumns = true,
@@ -62,6 +65,57 @@ namespace ProjetoFBD
                 RowHeadersVisible = false
             };
             this.Controls.Add(dgvTeams);
+
+            // Chart para pontos das equipas
+            chartTeamPoints = new Chart
+            {
+                Name = "chartTeamPoints",
+                Location = new Point(790, 70),
+                Size = new Size(580, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.White
+            };
+
+            // Configurar Chart Area
+            ChartArea chartArea = new ChartArea
+            {
+                Name = "MainArea",
+                BackColor = Color.WhiteSmoke,
+                AxisX = 
+                { 
+                    Title = "Teams",
+                    Interval = 1,
+                    LabelStyle = { Angle = -45, Font = new Font("Arial", 8) }
+                },
+                AxisY = 
+                { 
+                    Title = "Points",
+                    LabelStyle = { Font = new Font("Arial", 9) }
+                }
+            };
+            chartTeamPoints.ChartAreas.Add(chartArea);
+
+            // Configurar Series
+            Series series = new Series
+            {
+                Name = "Points",
+                ChartType = SeriesChartType.Bar,
+                Color = Color.FromArgb(220, 20, 20),
+                IsValueShownAsLabel = true,
+                Font = new Font("Arial", 8, FontStyle.Bold)
+            };
+            chartTeamPoints.Series.Add(series);
+
+            // Título do gráfico
+            Title chartTitle = new Title
+            {
+                Text = "Team Career Points",
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            chartTeamPoints.Titles.Add(chartTitle);
+
+            this.Controls.Add(chartTeamPoints);
 
             // Painel de ações
             pnlStaffActions = new Panel
@@ -265,6 +319,7 @@ namespace ProjetoFBD
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         
                         teamTable.AcceptChanges();
+                        LoadTeamPointsChart(); // Atualizar gráfico
                     }
                     catch (SqlException sqlEx)
                     {
@@ -409,6 +464,188 @@ namespace ProjetoFBD
             else
             {
                 LoadTeamData();
+            }
+            
+            LoadTeamPointsChart();
+        }
+
+        private void LoadTeamPointsChart()
+        {
+            if (chartTeamPoints == null) return;
+
+            string connectionString = DbConfig.ConnectionString;
+            
+            // Query para calcular os pontos totais de cada equipa
+            string query = @"
+                SELECT 
+                    e.Nome AS TeamName,
+                    ISNULL(SUM(r.Pontos), 0) AS TotalPoints
+                FROM Equipa e
+                LEFT JOIN Piloto p ON e.ID_Equipa = p.ID_Equipa
+                LEFT JOIN Resultados r ON p.ID_Piloto = r.ID_Piloto
+                GROUP BY e.ID_Equipa, e.Nome
+                ORDER BY TotalPoints DESC, e.Nome ASC";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            chartTeamPoints.Series["Points"].Points.Clear();
+                            
+                            // Cores específicas por equipa F1 (baseadas nas cores reais)
+                            var teamColors = new System.Collections.Generic.Dictionary<string, Color>
+                            {
+                                { "Alpine", Color.FromArgb(0, 144, 255) },           // Azul
+                                { "Aston Martin", Color.FromArgb(0, 111, 98) },     // Verde escuro
+                                { "Scuderia Ferrari", Color.FromArgb(220, 0, 0) },  // Vermelho Ferrari
+                                { "Red Bull Racing", Color.FromArgb(30, 65, 174) }, // Azul marinho
+                                { "Mercedes", Color.FromArgb(0, 210, 190) },        // Turquesa
+                                { "McLaren", Color.FromArgb(255, 135, 0) },         // Laranja McLaren
+                                { "Williams", Color.FromArgb(0, 82, 147) },         // Azul Williams
+                                { "Racing Bulls", Color.FromArgb(70, 155, 255) },   // Azul claro
+                                { "Haas", Color.FromArgb(182, 186, 189) },          // Cinza
+                                { "Kick Sauber", Color.FromArgb(82, 226, 82) }      // Verde
+                            };
+                            
+                            int index = 0;
+                            while (reader.Read())
+                            {
+                                string teamName = reader["TeamName"].ToString() ?? "Unknown";
+                                int totalPoints = Convert.ToInt32(reader["TotalPoints"]);
+                                
+                                // Adicionar ponto ao gráfico
+                                int pointIndex = chartTeamPoints.Series["Points"].Points.AddXY(teamName, totalPoints);
+                                
+                                // Aplicar cor específica da equipa ou cor padrão
+                                Color teamColor;
+                                if (teamColors.TryGetValue(teamName, out Color specificColor))
+                                {
+                                    teamColor = specificColor;
+                                }
+                                else
+                                {
+                                    // Cor padrão se não encontrar
+                                    teamColor = Color.FromArgb(220, 20, 20);
+                                }
+                                
+                                chartTeamPoints.Series["Points"].Points[pointIndex].Color = teamColor;
+                                
+                                // Tooltip detalhado
+                                chartTeamPoints.Series["Points"].Points[pointIndex].ToolTip = 
+                                    $"#{index + 1} {teamName}\n{totalPoints} points\nClick for details";
+                                
+                                // Label customizado
+                                chartTeamPoints.Series["Points"].Points[pointIndex].Label = totalPoints.ToString();
+                                chartTeamPoints.Series["Points"].Points[pointIndex].Font = new Font("Arial", 9, FontStyle.Bold);
+                                chartTeamPoints.Series["Points"].Points[pointIndex].LabelForeColor = Color.White;
+                                
+                                // Efeito especial no top 3
+                                if (index == 0)
+                                {
+                                    // Campeão - efeito dourado
+                                    chartTeamPoints.Series["Points"].Points[pointIndex].BorderWidth = 4;
+                                    chartTeamPoints.Series["Points"].Points[pointIndex].BorderColor = Color.Gold;
+                                }
+                                else if (index < 3)
+                                {
+                                    // Top 3 - borda prateada
+                                    chartTeamPoints.Series["Points"].Points[pointIndex].BorderWidth = 3;
+                                    chartTeamPoints.Series["Points"].Points[pointIndex].BorderColor = Color.Silver;
+                                }
+                                
+                                index++;
+                            }
+                        }
+                    }
+                }
+                
+                // Aplicar efeitos visuais 3D
+                if (chartTeamPoints.ChartAreas.Count > 0)
+                {
+                    chartTeamPoints.ChartAreas[0].Area3DStyle.Enable3D = true;
+                    chartTeamPoints.ChartAreas[0].Area3DStyle.Rotation = -5;
+                    chartTeamPoints.ChartAreas[0].Area3DStyle.Inclination = 10;
+                    chartTeamPoints.ChartAreas[0].Area3DStyle.LightStyle = LightStyle.Realistic;
+                    chartTeamPoints.ChartAreas[0].BackGradientStyle = GradientStyle.LeftRight;
+                    chartTeamPoints.ChartAreas[0].BackColor = Color.FromArgb(245, 245, 245);
+                    chartTeamPoints.ChartAreas[0].BackSecondaryColor = Color.White;
+                    
+                    // Grid melhorado
+                    chartTeamPoints.ChartAreas[0].AxisX.MajorGrid.LineColor = Color.FromArgb(200, 200, 200);
+                    chartTeamPoints.ChartAreas[0].AxisY.MajorGrid.LineColor = Color.FromArgb(200, 200, 200);
+                    chartTeamPoints.ChartAreas[0].AxisX.MajorGrid.LineDashStyle = ChartDashStyle.Dot;
+                    
+                    // Eixos mais bonitos
+                    chartTeamPoints.ChartAreas[0].AxisY.LabelStyle.ForeColor = Color.FromArgb(80, 80, 80);
+                    chartTeamPoints.ChartAreas[0].AxisX.LabelStyle.ForeColor = Color.FromArgb(80, 80, 80);
+                }
+                
+                // Adicionar legenda interativa
+                if (chartTeamPoints.Legends.Count == 0)
+                {
+                    Legend legend = new Legend
+                    {
+                        Name = "Legend",
+                        Docking = Docking.Bottom,
+                        Alignment = StringAlignment.Center,
+                        BackColor = Color.Transparent,
+                        Font = new Font("Arial", 8, FontStyle.Italic)
+                    };
+                    chartTeamPoints.Legends.Add(legend);
+                }
+                
+                // Interatividade - Clique no gráfico
+                chartTeamPoints.Click -= ChartTeamPoints_Click;
+                chartTeamPoints.Click += ChartTeamPoints_Click;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading team points chart: {ex.Message}", "Chart Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        
+        private void ChartTeamPoints_Click(object? sender, EventArgs e)
+        {
+            if (sender is Chart chart && e is MouseEventArgs mouseEvent)
+            {
+                HitTestResult result = chart.HitTest(mouseEvent.X, mouseEvent.Y);
+                
+                if (result.ChartElementType == ChartElementType.DataPoint)
+                {
+                    DataPoint point = result.Series.Points[result.PointIndex];
+                    string team = point.AxisLabel;
+                    double points = point.YValues[0];
+                    
+                    DialogResult dialogResult = MessageBox.Show(
+                        $"Team: {team}\nCareer Points: {points}\n\nWould you like to view team details?",
+                        "Team Career Points",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
+                    
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        // Procurar o ID da equipa e abrir detalhes
+                        if (dgvTeams != null && dgvTeams.Rows.Count > 0)
+                        {
+                            foreach (DataGridViewRow row in dgvTeams.Rows)
+                            {
+                                if (row.Cells["Nome"].Value?.ToString() == team)
+                                {
+                                    dgvTeams.ClearSelection();
+                                    row.Selected = true;
+                                    btnViewDetails_Click(null, EventArgs.Empty);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

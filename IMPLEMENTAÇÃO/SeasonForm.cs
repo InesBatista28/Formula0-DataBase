@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Configuration; 
 using System.Linq;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ProjetoFBD
 {
@@ -13,6 +14,9 @@ namespace ProjetoFBD
         // Declare UI components
         private DataGridView? dgvSeasons;
         private Panel? pnlStaffActions;
+        private Panel? pnlPodiums;
+        private Chart? chartDriverPodium;
+        private Chart? chartTeamPodium;
         
         public SeasonForm() : this("Staff") { }
         private string userRole;
@@ -25,7 +29,7 @@ namespace ProjetoFBD
             this.userRole = role;
             
             this.Text = "Seasons Management";
-            this.Size = new Size(1200, 700);
+            this.Size = new Size(1600, 750);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             SetupSeasonsLayout();
@@ -43,14 +47,167 @@ namespace ProjetoFBD
             {
                 Name = "dgvSeasons",
                 Location = new Point(10, 10),
-                Size = new Size(1160, 480),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Size = new Size(600, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AllowUserToAddRows = false,
                 ReadOnly = true 
             };
             this.Controls.Add(dgvSeasons);
+            
+            // Evento de seleção mudou para atualizar pódios
+            dgvSeasons.SelectionChanged += DgvSeasons_SelectionChanged;
 
-            // --- 2. Staff Actions Panel ---
+            // --- 2. Panel para Pódios (Top 3) ---
+            pnlPodiums = new Panel
+            {
+                Location = new Point(620, 10),
+                Size = new Size(960, 480),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            this.Controls.Add(pnlPodiums);
+            
+            // Label do título dos pódios
+            Panel titlePanel = new Panel
+            {
+                Location = new Point(0, 0),
+                Size = new Size(960, 50),
+                BackColor = Color.FromArgb(220, 20, 20)
+            };
+            pnlPodiums.Controls.Add(titlePanel);
+            
+            Label lblPodiumTitle = new Label
+            {
+                Text = "SEASON CHAMPIONSHIP PODIUM",
+                Location = new Point(0, 10),
+                Size = new Size(960, 30),
+                Font = new Font("Arial", 16, FontStyle.Bold),
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = Color.Transparent
+            };
+            titlePanel.Controls.Add(lblPodiumTitle);
+            
+            // Chart para Pódio de Pilotos - REDESENHADO
+            chartDriverPodium = new Chart
+            {
+                Name = "chartDriverPodium",
+                Location = new Point(10, 60),
+                Size = new Size(465, 410),
+                BackColor = Color.White,
+                BorderlineColor = Color.FromArgb(220, 20, 20),
+                BorderlineWidth = 2,
+                BorderlineDashStyle = ChartDashStyle.Solid
+            };
+            
+            ChartArea driverArea = new ChartArea
+            {
+                Name = "DriverArea",
+                BackColor = Color.FromArgb(250, 250, 250),
+                AxisX = 
+                { 
+                    Enabled = AxisEnabled.True,
+                    LabelStyle = { ForeColor = Color.FromArgb(60, 60, 60), Font = new Font("Arial", 10, FontStyle.Bold) },
+                    LineColor = Color.FromArgb(180, 180, 180),
+                    MajorGrid = { Enabled = false }
+                },
+                AxisY = 
+                { 
+                    Enabled = AxisEnabled.True,
+                    LabelStyle = { ForeColor = Color.FromArgb(60, 60, 60), Font = new Font("Arial", 9) },
+                    LineColor = Color.FromArgb(180, 180, 180),
+                    MajorGrid = { LineColor = Color.FromArgb(220, 220, 220), LineDashStyle = ChartDashStyle.Dot },
+                    Title = "Points",
+                    TitleFont = new Font("Arial", 10, FontStyle.Bold),
+                    TitleForeColor = Color.FromArgb(80, 80, 80)
+                }
+            };
+            chartDriverPodium.ChartAreas.Add(driverArea);
+            
+            Series driverSeries = new Series
+            {
+                Name = "Drivers",
+                ChartType = SeriesChartType.Column,
+                IsValueShownAsLabel = true,
+                Font = new Font("Arial", 11, FontStyle.Bold),
+                BorderWidth = 2,
+                BorderColor = Color.White
+            };
+            chartDriverPodium.Series.Add(driverSeries);
+            
+            Title driverTitle = new Title
+            {
+                Text = "DRIVERS",
+                Font = new Font("Arial", 14, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20),
+                BackColor = Color.Transparent,
+                Alignment = ContentAlignment.TopCenter
+            };
+            chartDriverPodium.Titles.Add(driverTitle);
+            
+            pnlPodiums.Controls.Add(chartDriverPodium);
+            
+            // Chart para Pódio de Equipas - REDESENHADO
+            chartTeamPodium = new Chart
+            {
+                Name = "chartTeamPodium",
+                Location = new Point(485, 60),
+                Size = new Size(465, 410),
+                BackColor = Color.White,
+                BorderlineColor = Color.FromArgb(220, 20, 20),
+                BorderlineWidth = 2,
+                BorderlineDashStyle = ChartDashStyle.Solid
+            };
+            
+            ChartArea teamArea = new ChartArea
+            {
+                Name = "TeamArea",
+                BackColor = Color.FromArgb(250, 250, 250),
+                AxisX = 
+                { 
+                    Enabled = AxisEnabled.True,
+                    LabelStyle = { ForeColor = Color.FromArgb(60, 60, 60), Font = new Font("Arial", 9, FontStyle.Bold), Angle = -20 },
+                    LineColor = Color.FromArgb(180, 180, 180),
+                    MajorGrid = { Enabled = false }
+                },
+                AxisY = 
+                { 
+                    Enabled = AxisEnabled.True,
+                    LabelStyle = { ForeColor = Color.FromArgb(60, 60, 60), Font = new Font("Arial", 9) },
+                    LineColor = Color.FromArgb(180, 180, 180),
+                    MajorGrid = { LineColor = Color.FromArgb(220, 220, 220), LineDashStyle = ChartDashStyle.Dot },
+                    Title = "Points",
+                    TitleFont = new Font("Arial", 10, FontStyle.Bold),
+                    TitleForeColor = Color.FromArgb(80, 80, 80)
+                }
+            };
+            chartTeamPodium.ChartAreas.Add(teamArea);
+            
+            Series teamSeries = new Series
+            {
+                Name = "Teams",
+                ChartType = SeriesChartType.Column,
+                IsValueShownAsLabel = true,
+                Font = new Font("Arial", 11, FontStyle.Bold),
+                BorderWidth = 2,
+                BorderColor = Color.White
+            };
+            chartTeamPodium.Series.Add(teamSeries);
+            
+            Title teamTitle = new Title
+            {
+                Text = "CONSTRUCTORS",
+                Font = new Font("Arial", 14, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20),
+                BackColor = Color.Transparent,
+                Alignment = ContentAlignment.TopCenter
+            };
+            chartTeamPodium.Titles.Add(teamTitle);
+            
+            pnlPodiums.Controls.Add(chartTeamPodium);
+
+            // --- 3. Staff Actions Panel ---
             pnlStaffActions = new Panel
             {
                 Location = new Point(10, 500),
@@ -192,6 +349,195 @@ namespace ProjetoFBD
             {
                 MessageBox.Show($"Error loading Season data: {ex.Message}", "Database Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        private void DgvSeasons_SelectionChanged(object? sender, EventArgs e)
+        {
+            if (dgvSeasons != null && dgvSeasons.SelectedRows.Count > 0)
+            {
+                var selectedRow = dgvSeasons.SelectedRows[0];
+                if (selectedRow.Cells["Ano"].Value != DBNull.Value)
+                {
+                    int selectedYear = Convert.ToInt32(selectedRow.Cells["Ano"].Value);
+                    LoadSeasonPodiums(selectedYear);
+                }
+            }
+        }
+        
+        private void LoadSeasonPodiums(int year)
+        {
+            LoadDriverPodium(year);
+            LoadTeamPodium(year);
+        }
+        
+        private void LoadDriverPodium(int year)
+        {
+            if (chartDriverPodium == null) return;
+            
+            string query = @"
+                SELECT TOP 3
+                    p.Abreviação,
+                    m.Nome AS DriverName,
+                    ISNULL(SUM(r.Pontos), 0) AS TotalPoints
+                FROM Grande_Prémio gp
+                INNER JOIN Resultados r ON r.NomeGP = gp.NomeGP
+                INNER JOIN Piloto p ON r.ID_Piloto = p.ID_Piloto
+                INNER JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                WHERE gp.Ano_Temporada = @Year AND r.NomeSessão = 'Race'
+                GROUP BY p.ID_Piloto, p.Abreviação, m.Nome, p.NumeroPermanente
+                ORDER BY TotalPoints DESC, p.NumeroPermanente ASC";
+            
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Year", year);
+                        
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            chartDriverPodium.Series["Drivers"].Points.Clear();
+                            
+                            // Cores vibrantes de pódio com efeito metálico
+                            Color[] podiumColors = new Color[]
+                            {
+                                Color.FromArgb(255, 215, 0),    // Ouro brilhante
+                                Color.FromArgb(192, 192, 192),  // Prata
+                                Color.FromArgb(205, 127, 50)    // Bronze
+                            };
+                            
+                            string[] medals = new string[] { "🥇", "🥈", "🥉" };
+                            
+                            int position = 0;
+                            while (reader.Read() && position < 3)
+                            {
+                                string abbreviation = reader["Abreviação"].ToString() ?? "???";
+                                string driverName = reader["DriverName"].ToString() ?? "Unknown";
+                                int totalPoints = Convert.ToInt32(reader["TotalPoints"]);
+                                
+                                string displayName = $"{medals[position]} {abbreviation}";
+                                
+                                int pointIndex = chartDriverPodium.Series["Drivers"].Points.AddXY(displayName, totalPoints);
+                                
+                                // Cor do pódio vibrante e limpa
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].Color = podiumColors[position];
+                                
+                                // Tooltip detalhado
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].ToolTip = 
+                                    $"P{position + 1}: {driverName}\n{totalPoints} points";
+                                
+                                // Label estilizado
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].Label = $"{totalPoints}";
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].LabelForeColor = Color.Black;
+                                
+                                // Borda destacada
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].BorderWidth = position == 0 ? 3 : 2;
+                                chartDriverPodium.Series["Drivers"].Points[pointIndex].BorderColor = Color.White;
+                                
+                                position++;
+                            }
+                            
+                            // SEM efeitos 3D - gráfico plano e limpo
+                            if (chartDriverPodium.ChartAreas.Count > 0)
+                            {
+                                chartDriverPodium.ChartAreas[0].Area3DStyle.Enable3D = false;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading driver podium: {ex.Message}", "Chart Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        
+        private void LoadTeamPodium(int year)
+        {
+            if (chartTeamPodium == null) return;
+            
+            string query = @"
+                SELECT TOP 3
+                    e.Nome AS TeamName,
+                    ISNULL(SUM(r.Pontos), 0) AS TotalPoints
+                FROM Grande_Prémio gp
+                INNER JOIN Resultados r ON r.NomeGP = gp.NomeGP
+                INNER JOIN Piloto p ON r.ID_Piloto = p.ID_Piloto
+                INNER JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                WHERE gp.Ano_Temporada = @Year AND r.NomeSessão = 'Race'
+                GROUP BY e.ID_Equipa, e.Nome
+                ORDER BY TotalPoints DESC";
+            
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Year", year);
+                        
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            chartTeamPodium.Series["Teams"].Points.Clear();
+                            
+                            // Cores vibrantes de pódio
+                            Color[] podiumColors = new Color[]
+                            {
+                                Color.FromArgb(255, 215, 0),    // Ouro
+                                Color.FromArgb(192, 192, 192),  // Prata
+                                Color.FromArgb(205, 127, 50)    // Bronze
+                            };
+                            
+                            string[] medals = new string[] { "🥇", "🥈", "🥉" };
+                            
+                            int position = 0;
+                            while (reader.Read() && position < 3)
+                            {
+                                string teamName = reader["TeamName"].ToString() ?? "Unknown";
+                                int totalPoints = Convert.ToInt32(reader["TotalPoints"]);
+                                
+                                // Abreviar nome se muito longo
+                                string displayName = teamName.Length > 18 ? teamName.Substring(0, 18) : teamName;
+                                displayName = $"{medals[position]} {displayName}";
+                                
+                                int pointIndex = chartTeamPodium.Series["Teams"].Points.AddXY(displayName, totalPoints);
+                                
+                                // Cor do pódio vibrante e limpa
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].Color = podiumColors[position];
+                                
+                                // Tooltip
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].ToolTip = 
+                                    $"P{position + 1}: {teamName}\n{totalPoints} points";
+                                
+                                // Label
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].Label = $"{totalPoints}";
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].LabelForeColor = Color.Black;
+                                
+                                // Borda
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].BorderWidth = position == 0 ? 3 : 2;
+                                chartTeamPodium.Series["Teams"].Points[pointIndex].BorderColor = Color.White;
+                                
+                                position++;
+                            }
+                            
+                            // SEM efeitos 3D - gráfico plano e limpo
+                            if (chartTeamPodium.ChartAreas.Count > 0)
+                            {
+                                chartTeamPodium.ChartAreas[0].Area3DStyle.Enable3D = false;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading team podium: {ex.Message}", "Chart Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 

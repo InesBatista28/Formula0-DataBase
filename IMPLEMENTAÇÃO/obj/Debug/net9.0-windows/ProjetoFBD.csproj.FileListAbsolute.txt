@@ -155,3 +155,4 @@ C:\Users\user\Documents\GitHub\Formula0-DataBase\IMPLEMENTAÇÃO\obj\Debug\net9.
 C:\Users\user\Documents\GitHub\Formula0-DataBase\IMPLEMENTAÇÃO\obj\Debug\net9.0-windows\ProjetoFBD.pdb
 C:\Users\user\Documents\GitHub\Formula0-DataBase\IMPLEMENTAÇÃO\obj\Debug\net9.0-windows\ProjetoFBD.genruntimeconfig.cache
 C:\Users\user\Documents\GitHub\Formula0-DataBase\IMPLEMENTAÇÃO\obj\Debug\net9.0-windows\ref\ProjetoFBD.dll
+C:\Users\user\Documents\GitHub\Formula0-DataBase\IMPLEMENTAÇÃO\bin\Debug\net9.0-windows\System.Windows.Forms.DataVisualization.dll
