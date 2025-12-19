@@ -67,13 +67,12 @@ namespace ProjetoFBD
             this.Controls.Add(pnlStaffActions);
 
             Button btnSave = CreateActionButton("Save Changes", new Point(0, 5));
-            Button btnAdd = CreateActionButton("Add Session", new Point(140, 5));
-            Button btnDelete = CreateActionButton("Delete", new Point(280, 5));
-            Button btnRefresh = CreateActionButton("Refresh", new Point(400, 5));
-            Button btnViewResults = CreateActionButton("View Results", new Point(520, 5), Color.FromArgb(0, 102, 204));
-            Button btnAddPenalty = CreateActionButton("Add Penalty", new Point(660, 5), Color.FromArgb(255, 140, 0));
-            Button btnViewPitstops = CreateActionButton("View Pitstops", new Point(800, 5), Color.FromArgb(128, 0, 128));
-            Button btnViewPenalties = CreateActionButton("View Penalties", new Point(940, 5), Color.FromArgb(178, 34, 34));
+            Button btnAdd = CreateActionButton("Add Session", new Point(0, 5));
+            Button btnDelete = CreateActionButton("Delete", new Point(0, 5));
+            Button btnRefresh = CreateActionButton("Refresh", new Point(0, 5));
+            Button btnViewResults = CreateActionButton("View Results", new Point(0, 5), Color.FromArgb(0, 102, 204));
+            Button btnAddPenalty = CreateActionButton("Add Penalty", new Point(0, 5), Color.FromArgb(255, 140, 0));
+            Button btnViewPenalties = CreateActionButton("View Penalties", new Point(0, 5), Color.FromArgb(178, 34, 34));
             
             btnSave.Click += btnSave_Click;
             btnAdd.Click += btnAdd_Click;
@@ -81,7 +80,6 @@ namespace ProjetoFBD
             btnRefresh.Click += btnRefresh_Click;
             btnViewResults.Click += btnViewResults_Click;
             btnAddPenalty.Click += btnAddPenalty_Click;
-            btnViewPitstops.Click += btnViewPitstops_Click;
             btnViewPenalties.Click += btnViewPenalties_Click;
 
             pnlStaffActions.Controls.Add(btnSave);
@@ -90,10 +88,13 @@ namespace ProjetoFBD
             pnlStaffActions.Controls.Add(btnRefresh);
             pnlStaffActions.Controls.Add(btnViewResults);
             pnlStaffActions.Controls.Add(btnAddPenalty);
-            pnlStaffActions.Controls.Add(btnViewPitstops);
             pnlStaffActions.Controls.Add(btnViewPenalties);
             
             pnlStaffActions.Size = new Size(1200, 50);
+
+            // Distribuir botões de forma equidistante
+            DistributeButtons(pnlStaffActions);
+            pnlStaffActions.Resize += (s, e) => DistributeButtons(pnlStaffActions);
 
             // Role-Based Access Control
             if (this.userRole == "Staff")
@@ -111,10 +112,32 @@ namespace ProjetoFBD
                 btnAdd.Visible = false;
                 btnDelete.Visible = false;
                 btnAddPenalty.Visible = false;
-                // Guest pode ver resultados, penalties e pitstops mas não pode adicionar
+                // Guest pode ver resultados e penalties mas não pode adicionar
             }
         }
 
+        private void DistributeButtons(Panel panel)
+        {
+            if (panel == null) return;
+            var buttons = panel.Controls.OfType<Button>().ToList();
+            if (buttons.Count == 0) return;
+
+            int panelWidth = panel.ClientSize.Width;
+            int panelHeight = panel.ClientSize.Height;
+            int totalButtonsWidth = buttons.Sum(b => b.Width);
+            int gaps = buttons.Count + 1;
+            int spacing = (panelWidth - totalButtonsWidth) / Math.Max(1, gaps);
+            if (spacing < 5) spacing = 5; // espaçamento mínimo
+
+            int x = spacing;
+            foreach (var btn in buttons)
+            {
+                int y = Math.Max(0, (panelHeight - btn.Height) / 2);
+                btn.Location = new Point(x, y);
+                btn.Anchor = AnchorStyles.Top;
+                x += btn.Width + spacing;
+            }
+        }
 
         private void LoadSessionData()
         {
@@ -1149,13 +1172,24 @@ namespace ProjetoFBD
                     dgvPitstops.Refresh();
                     Application.DoEvents();
 
-                    if (dgvPitstops.Columns != null)
+                    if (dgvPitstops.Columns != null && dgvPitstops.Columns.Count > 0)
                     {
+                        // Centralizar todas as colunas
+                        foreach (DataGridViewColumn col in dgvPitstops.Columns)
+                        {
+                            if (col != null)
+                            {
+                                col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            }
+                        }
+
+                        // Esconder ID
                         if (dgvPitstops.Columns.Contains("ID_Pitstop") && dgvPitstops.Columns["ID_Pitstop"] != null)
                         {
-                            dgvPitstops.Columns["ID_Pitstop"]!.HeaderText = "ID";
-                            dgvPitstops.Columns["ID_Pitstop"]!.Width = 60;
+                            dgvPitstops.Columns["ID_Pitstop"]!.Visible = false;
                         }
+                        
                         if (dgvPitstops.Columns.Contains("NumeroVolta") && dgvPitstops.Columns["NumeroVolta"] != null)
                             dgvPitstops.Columns["NumeroVolta"]!.HeaderText = "Lap";
                         if (dgvPitstops.Columns.Contains("DuraçãoParagem") && dgvPitstops.Columns["DuraçãoParagem"] != null)
@@ -1227,6 +1261,7 @@ namespace ProjetoFBD
     // ============================================================================
     public class AddPitstopDialog : Form
     {
+        private ComboBox? cmbTeam;
         private ComboBox? cmbDriver;
         private NumericUpDown? nudLap;
         private MaskedTextBox? txtStopDuration;
@@ -1234,6 +1269,7 @@ namespace ProjetoFBD
         
         private string sessionName;
         private string gpName;
+        private bool isUpdatingFilters = false;
 
         public AddPitstopDialog(string sessionName, string gpName)
         {
@@ -1241,13 +1277,14 @@ namespace ProjetoFBD
             this.gpName = gpName;
             
             InitializeUI();
+            LoadTeams();
             LoadDrivers();
         }
 
         private void InitializeUI()
         {
             this.Text = $"Add Pitstop - {sessionName}";
-            this.Size = new Size(450, 350);
+            this.Size = new Size(450, 400);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -1263,35 +1300,54 @@ namespace ProjetoFBD
             };
             this.Controls.Add(lblTitle);
 
+            // Team
+            Label lblTeam = new Label
+            {
+                Text = "Team:",
+                Location = new Point(20, 60),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblTeam);
+
+            cmbTeam = new ComboBox
+            {
+                Location = new Point(150, 57),
+                Size = new Size(260, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbTeam.SelectedIndexChanged += CmbTeam_SelectedIndexChanged;
+            this.Controls.Add(cmbTeam);
+
             // Driver
             Label lblDriver = new Label
             {
                 Text = "Driver:",
-                Location = new Point(20, 60),
+                Location = new Point(20, 100),
                 Size = new Size(120, 20)
             };
             this.Controls.Add(lblDriver);
 
             cmbDriver = new ComboBox
             {
-                Location = new Point(150, 57),
+                Location = new Point(150, 97),
                 Size = new Size(260, 25),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
+            cmbDriver.SelectedIndexChanged += CmbDriver_SelectedIndexChanged;
             this.Controls.Add(cmbDriver);
 
             // Lap Number
             Label lblLap = new Label
             {
                 Text = "Lap Number:",
-                Location = new Point(20, 100),
+                Location = new Point(20, 140),
                 Size = new Size(120, 20)
             };
             this.Controls.Add(lblLap);
 
             nudLap = new NumericUpDown
             {
-                Location = new Point(150, 97),
+                Location = new Point(150, 137),
                 Size = new Size(100, 25),
                 Minimum = 1,
                 Maximum = 999,
@@ -1303,14 +1359,14 @@ namespace ProjetoFBD
             Label lblStopDuration = new Label
             {
                 Text = "Stop Duration:",
-                Location = new Point(20, 140),
+                Location = new Point(20, 180),
                 Size = new Size(120, 20)
             };
             this.Controls.Add(lblStopDuration);
 
             txtStopDuration = new MaskedTextBox
             {
-                Location = new Point(150, 137),
+                Location = new Point(150, 177),
                 Size = new Size(100, 25),
                 Mask = "00:00:00.000",
                 Text = "00:00:00.000"
@@ -1320,7 +1376,7 @@ namespace ProjetoFBD
             Label lblStopFormat = new Label
             {
                 Text = "(HH:MM:SS.mmm)",
-                Location = new Point(260, 140),
+                Location = new Point(260, 180),
                 Size = new Size(150, 20),
                 ForeColor = Color.Gray
             };
@@ -1330,14 +1386,14 @@ namespace ProjetoFBD
             Label lblPitlaneDuration = new Label
             {
                 Text = "Pitlane Duration:",
-                Location = new Point(20, 180),
+                Location = new Point(20, 220),
                 Size = new Size(120, 20)
             };
             this.Controls.Add(lblPitlaneDuration);
 
             txtPitlaneDuration = new MaskedTextBox
             {
-                Location = new Point(150, 177),
+                Location = new Point(150, 217),
                 Size = new Size(100, 25),
                 Mask = "00:00:00.000",
                 Text = "00:00:00.000"
@@ -1347,18 +1403,21 @@ namespace ProjetoFBD
             Label lblPitlaneFormat = new Label
             {
                 Text = "(HH:MM:SS.mmm)",
-                Location = new Point(260, 180),
+                Location = new Point(260, 220),
                 Size = new Size(150, 20),
                 ForeColor = Color.Gray
             };
             this.Controls.Add(lblPitlaneFormat);
 
-            // Buttons
+            // Buttons - Equidistantes
+            int buttonWidth = 100;
+            int buttonSpacing = (this.ClientSize.Width - (2 * buttonWidth)) / 3;
+            
             Button btnOK = new Button
             {
                 Text = "Add Pitstop",
-                Location = new Point(200, 250),
-                Size = new Size(100, 35),
+                Location = new Point(buttonSpacing, 300),
+                Size = new Size(buttonWidth, 35),
                 BackColor = Color.FromArgb(220, 20, 20),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
@@ -1370,8 +1429,8 @@ namespace ProjetoFBD
             Button btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(310, 250),
-                Size = new Size(100, 35),
+                Location = new Point(2 * buttonSpacing + buttonWidth, 300),
+                Size = new Size(buttonWidth, 35),
                 BackColor = Color.Gray,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -1384,23 +1443,70 @@ namespace ProjetoFBD
             this.CancelButton = btnCancel;
         }
 
-        private void LoadDrivers()
+        private void LoadTeams()
         {
-            if (cmbDriver == null) return;
+            if (cmbTeam == null) return;
 
             try
             {
                 using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
                 {
                     conn.Open();
-                    string query = @"
-                        SELECT p.ID_Piloto, p.NumeroPermanente, p.Abreviação, m.Nome, e.Nome AS Team
-                        FROM Piloto p
-                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
-                        LEFT JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
-                        ORDER BY m.Nome";
+                    string query = "SELECT ID_Equipa, Nome FROM Equipa ORDER BY Nome";
                     
                     SqlCommand cmd = new SqlCommand(query, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(0);
+                        string name = reader.GetString(1);
+                        
+                        cmbTeam.Items.Add(new TeamItem { ID = id, Name = name });
+                    }
+                    
+                    if (cmbTeam.Items.Count > 0)
+                        cmbTeam.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading teams: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadDrivers(int? teamId = null)
+        {
+            if (cmbDriver == null) return;
+
+            try
+            {
+                isUpdatingFilters = true;
+                cmbDriver.Items.Clear();
+                
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        SELECT p.ID_Piloto, p.NumeroPermanente, p.Abreviação, m.Nome, e.ID_Equipa, e.Nome AS Team
+                        FROM Piloto p
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        LEFT JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa";
+                    
+                    if (teamId.HasValue)
+                    {
+                        query += " WHERE p.ID_Equipa = @TeamId";
+                    }
+                    
+                    query += " ORDER BY m.Nome";
+                    
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    if (teamId.HasValue)
+                    {
+                        cmd.Parameters.AddWithValue("@TeamId", teamId.Value);
+                    }
+                    
                     SqlDataReader reader = cmd.ExecuteReader();
                     
                     while (reader.Read())
@@ -1409,14 +1515,16 @@ namespace ProjetoFBD
                         string num = reader.IsDBNull(1) ? "?" : reader.GetInt32(1).ToString();
                         string code = reader.IsDBNull(2) ? "???" : reader.GetString(2);
                         string name = reader.IsDBNull(3) ? "Unknown" : reader.GetString(3);
-                        string team = reader.IsDBNull(4) ? "No Team" : reader.GetString(4);
+                        int teamIdValue = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+                        string team = reader.IsDBNull(5) ? "No Team" : reader.GetString(5);
                         
                         cmbDriver.Items.Add(new DriverItem 
                         { 
                             ID = id, 
                             Number = num, 
                             Code = code, 
-                            Name = name, 
+                            Name = name,
+                            TeamID = teamIdValue,
                             Team = team 
                         });
                     }
@@ -1430,6 +1538,38 @@ namespace ProjetoFBD
                 MessageBox.Show($"Error loading drivers: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                isUpdatingFilters = false;
+            }
+        }
+
+        private void CmbTeam_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (isUpdatingFilters || cmbTeam == null || cmbTeam.SelectedItem == null) return;
+
+            var selectedTeam = (TeamItem)cmbTeam.SelectedItem;
+            LoadDrivers(selectedTeam.ID);
+        }
+
+        private void CmbDriver_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (isUpdatingFilters || cmbDriver == null || cmbDriver.SelectedItem == null || cmbTeam == null) return;
+
+            var selectedDriver = (DriverItem)cmbDriver.SelectedItem;
+            
+            // Atualizar a equipa para a equipa do piloto selecionado
+            isUpdatingFilters = true;
+            for (int i = 0; i < cmbTeam.Items.Count; i++)
+            {
+                var team = (TeamItem)cmbTeam.Items[i]!;
+                if (team.ID == selectedDriver.TeamID)
+                {
+                    cmbTeam.SelectedIndex = i;
+                    break;
+                }
+            }
+            isUpdatingFilters = false;
         }
 
         private void BtnOK_Click(object? sender, EventArgs e)
@@ -1496,17 +1636,29 @@ namespace ProjetoFBD
             }
         }
 
+        private class TeamItem
+        {
+            public int ID { get; set; }
+            public string Name { get; set; } = "";
+
+            public override string ToString()
+            {
+                return Name;
+            }
+        }
+
         private class DriverItem
         {
             public int ID { get; set; }
             public string Number { get; set; } = "";
             public string Code { get; set; } = "";
             public string Name { get; set; } = "";
+            public int TeamID { get; set; }
             public string Team { get; set; } = "";
 
             public override string ToString()
             {
-                return $"#{Number} {Code} - {Name} ({Team})";
+                return $"#{Number} {Code} - {Name}";
             }
         }
     }
@@ -1649,24 +1801,27 @@ namespace ProjetoFBD
                     // Load Drivers
                     cmbDriver.Items.Add("-- All Drivers --");
                     string driverQuery = @"
-                        SELECT DISTINCT m.Nome, p.Abreviação
+                        SELECT DISTINCT p.Abreviação, m.Nome
                         FROM Penalizações pen
                         INNER JOIN Piloto p ON pen.ID_Piloto = p.ID_Piloto
                         LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
                         WHERE pen.NomeSessão = @SessionName AND pen.NomeGP = @GPName
-                        ORDER BY m.Nome";
+                        ORDER BY p.Abreviação";
                     
-                    SqlCommand cmdDriver = new SqlCommand(driverQuery, conn);
-                    cmdDriver.Parameters.AddWithValue("@SessionName", sessionName);
-                    cmdDriver.Parameters.AddWithValue("@GPName", gpName);
-                    SqlDataReader readerDriver = cmdDriver.ExecuteReader();
-                    while (readerDriver.Read())
+                    using (SqlCommand cmdDriver = new SqlCommand(driverQuery, conn))
                     {
-                        string nome = readerDriver.IsDBNull(0) ? "Unknown" : readerDriver.GetString(0);
-                        string code = readerDriver.IsDBNull(1) ? "???" : readerDriver.GetString(1);
-                        cmbDriver.Items.Add($"{code} - {nome}");
+                        cmdDriver.Parameters.AddWithValue("@SessionName", sessionName);
+                        cmdDriver.Parameters.AddWithValue("@GPName", gpName);
+                        using (SqlDataReader readerDriver = cmdDriver.ExecuteReader())
+                        {
+                            while (readerDriver.Read())
+                            {
+                                string code = readerDriver.IsDBNull(0) ? "???" : readerDriver.GetString(0);
+                                string nome = readerDriver.IsDBNull(1) ? "Unknown" : readerDriver.GetString(1);
+                                cmbDriver.Items.Add($"{code} - {nome}");
+                            }
+                        }
                     }
-                    readerDriver.Close();
                     cmbDriver.SelectedIndex = 0;
 
                     // Load Teams
@@ -1679,15 +1834,20 @@ namespace ProjetoFBD
                         WHERE pen.NomeSessão = @SessionName AND pen.NomeGP = @GPName
                         ORDER BY e.Nome";
                     
-                    SqlCommand cmdTeam = new SqlCommand(teamQuery, conn);
-                    cmdTeam.Parameters.AddWithValue("@SessionName", sessionName);
-                    cmdTeam.Parameters.AddWithValue("@GPName", gpName);
-                    SqlDataReader readerTeam = cmdTeam.ExecuteReader();
-                    while (readerTeam.Read())
+                    using (SqlCommand cmdTeam = new SqlCommand(teamQuery, conn))
                     {
-                        cmbTeam.Items.Add(readerTeam["Nome"].ToString() ?? "");
+                        cmdTeam.Parameters.AddWithValue("@SessionName", sessionName);
+                        cmdTeam.Parameters.AddWithValue("@GPName", gpName);
+                        using (SqlDataReader readerTeam = cmdTeam.ExecuteReader())
+                        {
+                            while (readerTeam.Read())
+                            {
+                                string teamName = readerTeam.IsDBNull(0) ? "" : readerTeam.GetString(0);
+                                if (!string.IsNullOrEmpty(teamName))
+                                    cmbTeam.Items.Add(teamName);
+                            }
+                        }
                     }
-                    readerTeam.Close();
                     cmbTeam.SelectedIndex = 0;
                 }
             }
@@ -1700,7 +1860,10 @@ namespace ProjetoFBD
 
         private void LoadPenalties(string? driverFilter = null, string? teamFilter = null)
         {
-            if (dgvPenalties == null) return;
+            if (dgvPenalties == null)
+            {
+                throw new InvalidOperationException("dgvPenalties not initialized before loading penalties.");
+            }
             
             try
             {
@@ -1754,33 +1917,35 @@ namespace ProjetoFBD
                     
                     dgvPenalties.DataSource = penaltyTable;
 
-                    // Configure columns
+                    // Configure columns safely
                     dgvPenalties.Refresh();
                     Application.DoEvents();
 
                     if (dgvPenalties.Columns != null)
                     {
-                        if (dgvPenalties.Columns.Contains("ID_Penalização") && dgvPenalties.Columns["ID_Penalização"] != null)
+                        foreach (DataGridViewColumn col in dgvPenalties.Columns)
                         {
-                            dgvPenalties.Columns["ID_Penalização"]!.HeaderText = "ID";
-                            dgvPenalties.Columns["ID_Penalização"]!.Width = 60;
+                            if (col == null) continue;
+                            // Apply simple headers; avoid width changes to prevent band thickness null refs
+                            if (string.Equals(col.Name, "ID_Penalização", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "ID";
+                            else if (string.Equals(col.Name, "TipoPenalização", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "Penalty Type";
+                            else if (string.Equals(col.Name, "Motivo", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "Reason";
+                            else if (string.Equals(col.Name, "DriverCode", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "Driver Code";
+                            else if (string.Equals(col.Name, "DriverName", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "Driver";
+                            else if (string.Equals(col.Name, "TeamName", StringComparison.OrdinalIgnoreCase))
+                                col.HeaderText = "Team";
                         }
-                        if (dgvPenalties.Columns.Contains("TipoPenalização") && dgvPenalties.Columns["TipoPenalização"] != null)
-                            dgvPenalties.Columns["TipoPenalização"]!.HeaderText = "Penalty Type";
-                        if (dgvPenalties.Columns.Contains("Motivo") && dgvPenalties.Columns["Motivo"] != null)
-                            dgvPenalties.Columns["Motivo"]!.HeaderText = "Reason";
-                        if (dgvPenalties.Columns.Contains("DriverCode") && dgvPenalties.Columns["DriverCode"] != null)
-                            dgvPenalties.Columns["DriverCode"]!.HeaderText = "Driver Code";
-                        if (dgvPenalties.Columns.Contains("DriverName") && dgvPenalties.Columns["DriverName"] != null)
-                            dgvPenalties.Columns["DriverName"]!.HeaderText = "Driver";
-                        if (dgvPenalties.Columns.Contains("TeamName") && dgvPenalties.Columns["TeamName"] != null)
-                            dgvPenalties.Columns["TeamName"]!.HeaderText = "Team";
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading penalties: {ex.Message}", "Error",
+                MessageBox.Show($"Error loading penalties: {ex}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

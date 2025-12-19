@@ -13,13 +13,10 @@ namespace ProjetoFBD
     public partial class CircuitForm : Form
     {
         private string userRole;
-        private SqlDataAdapter? dataAdapter; // Tornar anulável
-        private DataTable? circuitoTable;
-        // Fields must be declared in the Designer file (CircuitForm.Designer.cs)
-        // We'll assume they are declared there, so we remove the '?' to simplify usage.
-        // Data management fields
+        private SqlDataAdapter? dataAdapter; // Adaptador SQL
+        private DataTable? circuitoTable;    // Tabela em memória
 
-        // Mapeamento de países para códigos ISO e emojis de bandeiras
+        // Bandeiras por país (emoji)
         private static readonly Dictionary<string, string> CountryFlags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "Portugal", "🇵🇹" },
@@ -67,7 +64,7 @@ namespace ProjetoFBD
 
         public CircuitForm(string role)
         {
-            // CRITICAL: InitializeComponent must be available from the Designer file
+            // Inicialização do formulário
             InitializeComponent(); 
             this.userRole = role;
             
@@ -82,47 +79,90 @@ namespace ProjetoFBD
 
         private void SetupCircuitsLayout()
         {
-            // --- 1. DataGridView for Listing ---
+            // Painel de ações (inferior)
+            pnlStaffActions = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 50
+            };
+            this.Controls.Add(pnlStaffActions);
+
+            // Grelha principal
             dgvCircuitos = new DataGridView
             {
                 Name = "dgvCircuits",
-                Location = new Point(10, 10),
-                Size = new Size(1160, 550),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Dock = DockStyle.Fill,
                 AllowUserToAddRows = false,
                 // Default to ReadOnly. Staff access handled below.
                 ReadOnly = true 
             };
+            // Ajustes após binding
+            dgvCircuitos.DataBindingComplete += DgvCircuitos_DataBindingComplete;
+            // Aparência da grelha
+            dgvCircuitos.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill; // Distribute columns
+            dgvCircuitos.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;       // Keep row height fixed
+            dgvCircuitos.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgvCircuitos.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+            dgvCircuitos.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter; // Center content
+            dgvCircuitos.DefaultCellStyle.WrapMode = DataGridViewTriState.False;                 // No multiline text
+            dgvCircuitos.RowHeadersVisible = true;
             this.Controls.Add(dgvCircuitos);
 
-            // --- Adicionar Coluna de Botão de Mapa ---
+            // WinForms para Staff e Guest
+
+            // Pesquisa (topo)
+            pnlSearch = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 50,
+                BackColor = Color.WhiteSmoke
+            };
+            this.Controls.Add(pnlSearch);
+
+            // Barra de pesquisa
+            lblSearch = new Label
+            {
+                Text = "Search:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+            pnlSearch.Controls.Add(lblSearch);
+
+            txtSearch = new TextBox
+            {
+                Size = new Size(380, 27),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+            txtSearch.TextChanged += txtSearch_TextChanged;
+            pnlSearch.Controls.Add(txtSearch);
+
+            // Posiciona pesquisa
+            pnlSearch.SizeChanged += (s, e) => PositionSearchControls();
+            PositionSearchControls();
+
+            // Coluna de botão "Map"
             DataGridViewButtonColumn mapButtonColumn = new DataGridViewButtonColumn
             {
                 Name = "MapColumn",
-                HeaderText = "Mapa",
-                Text = "Ver Mapa",
-                UseColumnTextForButtonValue = true
+                HeaderText = "Map",
+                Text = "View Map",
+                UseColumnTextForButtonValue = true,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                FillWeight = 70
             };
+            mapButtonColumn.MinimumWidth = 90;
+            mapButtonColumn.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dgvCircuitos.Columns.Add(mapButtonColumn);
-            dgvCircuitos.CellContentClick += dgvCircuitos_CellContentClick; // Ligar o evento
+            dgvCircuitos.CellContentClick += dgvCircuitos_CellContentClick; // clique do botão
 
-            // --- 2. Staff Actions Panel ---
-            pnlStaffActions = new Panel
-            {
-                Location = new Point(10, 580),
-                Size = new Size(980, 50),  // 6 botões x 140 + espaços
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            this.Controls.Add(pnlStaffActions);
-            
-
-            // UI Text in English
+            // Botões
             Button btnSave = CreateActionButton("Save Changes", new Point(0, 5));
             Button btnAdd = CreateActionButton("Add New", new Point(140, 5));
             Button btnDelete = CreateActionButton("Delete Selected", new Point(280, 5));
             Button btnEdit = CreateActionButton("Edit Selected", new Point(420, 5));
             Button btnRefresh = CreateActionButton("Refresh", new Point(560, 5));
             Button btnUploadMap = CreateActionButton("Upload Map", new Point(700, 5));
+            Button btnViewGPs = CreateActionButton("View GPs", new Point(840, 5));
 
             btnSave.Click += btnSave_Click;
             btnAdd.Click += btnAdd_Click;
@@ -130,26 +170,39 @@ namespace ProjetoFBD
             btnEdit.Click += btnEdit_Click;
             btnRefresh.Click += btnRefresh_Click;
             btnUploadMap.Click += btnUploadMap_Click;
+            btnViewGPs.Click += btnViewGPs_Click;
 
-            // Adiciona os botões ao painel (cada botão apenas uma vez)
+            // Adiciona os botões
             pnlStaffActions.Controls.Add(btnSave);
             pnlStaffActions.Controls.Add(btnAdd);
             pnlStaffActions.Controls.Add(btnDelete);
             pnlStaffActions.Controls.Add(btnEdit);
             pnlStaffActions.Controls.Add(btnRefresh);
             pnlStaffActions.Controls.Add(btnUploadMap);
+            pnlStaffActions.Controls.Add(btnViewGPs);
             
-            // --- 3. Role-Based Access Control (RBAC) ---
+            // Permissões por perfil
             if (this.userRole == "Staff")
             {
-                dgvCircuitos.ReadOnly = false; // Allow inline editing for Staff
-                pnlStaffActions.Visible = true; // Show action buttons
+                dgvCircuitos.ReadOnly = false; // Edição
+                pnlStaffActions.Visible = true; // Mostra ações
+                btnSave.Visible = btnAdd.Visible = btnDelete.Visible = btnEdit.Visible = btnUploadMap.Visible = btnRefresh.Visible = true;
+                btnViewGPs.Visible = true;
             }
             else
             {
-                // Guest access: Read-only and hide action buttons
-                dgvCircuitos.ReadOnly = true; 
-                pnlStaffActions.Visible = false;
+                // Guest: só leitura e apenas "View GPs"
+                dgvCircuitos.ReadOnly = true;
+                pnlStaffActions.Visible = true;
+                btnSave.Visible = false;
+                btnAdd.Visible = false;
+                btnDelete.Visible = false;
+                btnEdit.Visible = false;
+                btnUploadMap.Visible = false;
+                btnRefresh.Visible = false;
+                btnViewGPs.Visible = true;
+                // Centraliza botão único
+                btnViewGPs.Location = new Point(0, 5);
             }
         }
         
@@ -181,11 +234,11 @@ namespace ProjetoFBD
             if (dgvCircuitos == null || dgvCircuitos.SelectedRows.Count == 0)
             {
                 MessageBox.Show("Please select a row to edit.", "Edit", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    return;
-}
+                return;
+            }
 
-// Select first selected row and begin editing the first editable cell (excluding PK)
-var row = dgvCircuitos.SelectedRows[0];
+            // Select first selected row and begin editing the first editable cell (excluding PK)
+            var row = dgvCircuitos.SelectedRows[0];
             int editColIndex = -1;
             for (int i = 0; i < dgvCircuitos.Columns.Count; i++)
             {
@@ -205,33 +258,40 @@ var row = dgvCircuitos.SelectedRows[0];
                 MessageBox.Show("No editable column found.", "Edit", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-
-        // -------------------------------------------------------------------------
         // DATA ACCESS METHODS
-        // -------------------------------------------------------------------------
-
-// Ficheiro: CircuitForm.cs
-
 private void LoadCircuitoData()
 {
-    string connectionString = DbConfig.ConnectionString;
-    string query = "SELECT ID_Circuito, Nome, Cidade, Pais, Comprimento_km, NumCurvas FROM Circuito";
-
     try
     {
+        if (dgvCircuitos == null)
+        {
+            MessageBox.Show("Grid not initialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        string connectionString = DbConfig.ConnectionString;
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            MessageBox.Show("Connection string not configured.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        string query = "SELECT ID_Circuito, Nome, Cidade, Pais, Comprimento_km, NumCurvas FROM Circuito";
         dataAdapter = new SqlDataAdapter(query, connectionString);
         circuitoTable = new DataTable();
         
-        dataAdapter.Fill(circuitoTable!);
-        
-        // Adicionar bandeiras aos países
-        if (circuitoTable.Columns.Contains("Pais"))
+        dataAdapter.Fill(circuitoTable);
+        // Filtro case-insensitive
+        circuitoTable.CaseSensitive = false;
+
+        // Prefixa bandeira ao país
+        if (circuitoTable != null && circuitoTable.Columns.Contains("Pais"))
         {
             foreach (DataRow row in circuitoTable.Rows)
             {
                 if (row["Pais"] != DBNull.Value)
                 {
-                    string country = row["Pais"].ToString() ?? "";
+                    string country = row["Pais"]?.ToString() ?? string.Empty;
                     string flag = GetCountryFlag(country);
                     if (!string.IsNullOrEmpty(flag))
                     {
@@ -240,45 +300,35 @@ private void LoadCircuitoData()
                 }
             }
         }
-        
+
         dgvCircuitos.DataSource = circuitoTable;
-        
-        // --- CRÍTICO: Configurar os comandos de salvamento AQUI e APENAS AQUI ---
-        
-        SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
-        
-        // Atribui os comandos gerados (o erro NullRef vinha desta reatribuição no Save)
-        dataAdapter.InsertCommand = commandBuilder.GetInsertCommand(true);
-        dataAdapter.UpdateCommand = commandBuilder.GetUpdateCommand(true);
-        dataAdapter.DeleteCommand = commandBuilder.GetDeleteCommand(true);
+        // Fonte única da grelha (WinForms)
 
-        // Garante que o ID gerado pelo SQL volta para o DataGridView
-        dataAdapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both; 
+        // Reapply any search filter after data reload
+        ApplySearchFilter();
+
+        // Tamanhos/alinhamentos
+        if (dgvCircuitos.Columns != null && dgvCircuitos.Columns.Count > 0)
+        {
+            ConfigureGridColumns();
+        }
         
-                    
-                    // ID_Circuito (Primary Key) should be read-only even for Staff
-                    if (dgvCircuitos.Columns.Contains("ID_Circuito"))
-                    {
-                        var column = dgvCircuitos.Columns["ID_Circuito"];
-                        if (column != null)
-                        {
-                            column.ReadOnly = true;
-                        }
-                    }
+        // Comandos de escrita só para Staff
+        if (userRole == "Staff")
+        {
+            SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
 
-                    // Translate column headers to English for the UI
-                    var nomeColumn = dgvCircuitos.Columns["Nome"];
-                    if (nomeColumn != null) nomeColumn.HeaderText = "Name";
-                    var cidadeColumn = dgvCircuitos.Columns["Cidade"];
-                    if (cidadeColumn != null) cidadeColumn.HeaderText = "City";
-                    var paisColumn = dgvCircuitos.Columns["Pais"];
-                    if (paisColumn != null) paisColumn.HeaderText = "Country";
-                    var comprimentoColumn = dgvCircuitos.Columns["Comprimento_km"];
-                    if (comprimentoColumn != null) comprimentoColumn.HeaderText = "Length (km)";
-                    var numCurvasColumn = dgvCircuitos.Columns["NumCurvas"];
-                    if (numCurvasColumn != null) numCurvasColumn.HeaderText = "Num Corners";
+            dataAdapter.InsertCommand = commandBuilder.GetInsertCommand(true);
+            dataAdapter.UpdateCommand = commandBuilder.GetUpdateCommand(true);
+            dataAdapter.DeleteCommand = commandBuilder.GetDeleteCommand(true);
 
-                }
+            if (dataAdapter.InsertCommand != null)
+            {
+                // Garante retorno da PK
+                dataAdapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
+            }
+        }
+        }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error loading Circuit data: {ex.Message}", "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -290,7 +340,7 @@ private void LoadCircuitoData()
             if (string.IsNullOrWhiteSpace(countryWithFlag))
                 return "";
             
-            // Remove o emoji de bandeira (primeiros caracteres se existirem)
+            // Remove o emoji no início
             string cleaned = countryWithFlag.Trim();
             foreach (var flag in CountryFlags.Values)
             {
@@ -302,6 +352,111 @@ private void LoadCircuitoData()
             }
             return cleaned;
         }
+
+        private void txtSearch_TextChanged(object? sender, EventArgs e)
+        {
+            ApplySearchFilter();
+        }
+
+        private void ConfigureGridColumns()
+        {
+            if (dgvCircuitos == null || dgvCircuitos.Columns.Count == 0) return;
+
+            // Ensure all columns are centered and not wrapping
+            foreach (DataGridViewColumn col in dgvCircuitos.Columns)
+            {
+                col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                col.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+                if (col.AutoSizeMode != DataGridViewAutoSizeColumnMode.Fill)
+                    col.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            }
+
+            // Adjust relative widths (FillWeight) and minimum widths
+            void SetWeights(string name, float weight, int minWidth)
+            {
+                var c = dgvCircuitos.Columns[name];
+                if (c != null)
+                {
+                    c.FillWeight = weight;
+                    c.MinimumWidth = minWidth;
+                }
+            }
+
+            SetWeights("ID_Circuito", 90, 90);
+            SetWeights("Nome", 220, 220);          // Give more space to avoid two lines
+            SetWeights("Cidade", 130, 120);
+            SetWeights("Pais", 160, 140);
+            SetWeights("Comprimento_km", 130, 120);
+            SetWeights("NumCurvas", 110, 100);
+            SetWeights("MapColumn", 80, 90);
+        }
+
+        private void PositionSearchControls()
+        {
+            if (pnlSearch == null || txtSearch == null || lblSearch == null) return;
+            int margin = 12;
+            int txtWidth = Math.Min(350, Math.Max(200, pnlSearch.ClientSize.Width / 4));
+            txtSearch.Size = new Size(txtWidth, txtSearch.Height);
+            int centerY = (pnlSearch.Height - txtSearch.Height) / 2;
+            
+            int lblWidth = lblSearch.PreferredWidth + 6;
+            int startX = Math.Max(margin, 20); // Start at left with padding
+            
+            lblSearch.Location = new Point(startX, centerY);
+            txtSearch.Location = new Point(startX + lblWidth, centerY);
+        }
+
+        private void ApplySearchFilter()
+        {
+            if (circuitoTable == null) return;
+            string term = txtSearch?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(term))
+            {
+                circuitoTable.DefaultView.RowFilter = string.Empty;
+                return;
+            }
+
+            string escaped = term.Replace("'", "''");
+            string filter =
+                $"Convert([Nome], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([Cidade], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([Pais], 'System.String') LIKE '%{escaped}%'";
+
+            circuitoTable.DefaultView.RowFilter = filter;
+        }
+
+        // Ajusta colunas após binding
+        private void DgvCircuitos_DataBindingComplete(object? sender, DataGridViewBindingCompleteEventArgs e)
+        {
+            if (dgvCircuitos == null || dgvCircuitos.Columns == null || dgvCircuitos.Columns.Count == 0)
+                return;
+
+            // Hide internal ID column from view
+            if (dgvCircuitos.Columns.Contains("ID_Circuito"))
+            {
+                var idCol = dgvCircuitos.Columns["ID_Circuito"];
+                if (idCol != null)
+                {
+                    idCol.Visible = false;
+                }
+            }
+
+            // Cabeçalhos em inglês e fonte para emojis
+            var nomeColumn = dgvCircuitos.Columns["Nome"]; if (nomeColumn != null) nomeColumn.HeaderText = "Name";
+            var cidadeColumn = dgvCircuitos.Columns["Cidade"]; if (cidadeColumn != null) cidadeColumn.HeaderText = "City";
+            var paisColumn = dgvCircuitos.Columns["Pais"]; 
+            if (paisColumn != null)
+            {
+                paisColumn.HeaderText = "Country";
+                try { paisColumn.DefaultCellStyle.Font = new Font("Segoe UI Emoji", dgvCircuitos.Font.Size); } catch {}
+            }
+            var comprimentoColumn = dgvCircuitos.Columns["Comprimento_km"]; if (comprimentoColumn != null) comprimentoColumn.HeaderText = "Length (km)";
+            var numCurvasColumn = dgvCircuitos.Columns["NumCurvas"]; if (numCurvasColumn != null) numCurvasColumn.HeaderText = "Num Corners";
+
+            // Tamanho/alinhamento
+            ConfigureGridColumns();
+        }
+        
         
 private void btnSave_Click(object? sender, EventArgs e)
 {
@@ -315,14 +470,14 @@ private void btnSave_Click(object? sender, EventArgs e)
             return;
         }
 
-        // Utilizamos 'using' para garantir que a conexão fecha automaticamente
+        // Abre ligação e confirma edição
         using (SqlConnection connection = new SqlConnection(connectionString))
         {
             try
             {
                 dgvCircuitos.EndEdit(); 
                 
-                // Remover bandeiras antes de salvar
+                // Remove bandeiras antes de gravar
                 if (circuitoTable.Columns.Contains("Pais"))
                 {
                     foreach (DataRow row in circuitoTable.Rows)
@@ -334,49 +489,45 @@ private void btnSave_Click(object? sender, EventArgs e)
                     }
                 }
                 
-                // CRÍTICO: Ligar os comandos gerados à NOVA conexão ativa
+                // Associa comandos à ligação
                 if (dataAdapter.InsertCommand != null) dataAdapter.InsertCommand.Connection = connection;
                 if (dataAdapter.UpdateCommand != null) dataAdapter.UpdateCommand.Connection = connection;
                 if (dataAdapter.DeleteCommand != null) dataAdapter.DeleteCommand.Connection = connection;
 
                 connection.Open();
                 
-                // Salvar as alterações
+                // Grava alterações
                 int rowsAffected = dataAdapter.Update(circuitoTable); 
                 
                 MessageBox.Show($"{rowsAffected} rows saved successfully!", "Success");
                 circuitoTable.AcceptChanges();
                 
-                // Recarregar dados para mostrar as bandeiras novamente
+                // Recarrega dados (volta a aplicar bandeiras)
                 LoadCircuitoData();
             }
             catch (Exception ex)
             {
-                // Este catch irá capturar erros de violação de chave primária, NULL, ou dados inválidos.
                 MessageBox.Show($"Error saving data: {ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 circuitoTable.RejectChanges(); 
             }
         } 
     }
 }
-        // Ficheiro: CircuitForm.cs
+        
 
 private void btnAdd_Click(object? sender, EventArgs e)
 {
     
     if (circuitoTable != null && userRole == "Staff")
     {
-        // 1. Adiciona uma nova linha vazia no topo do DataTable
+        // Adiciona uma nova linha no topo
         DataRow newRow = circuitoTable.NewRow();
         circuitoTable.Rows.InsertAt(newRow, 0);
-        
-        // --- CRÍTICO: Forçar o foco e a edição na nova linha ---
-        
-        // 2. Seleciona a primeira linha (onde a nova linha foi inserida)
+        // Foca a primeira célula editável
         if (dgvCircuitos.Rows.Count > 0 && dgvCircuitos.Columns.Contains("Nome"))
         {
             dgvCircuitos.CurrentCell = dgvCircuitos.Rows[0].Cells["Nome"]; // Assumimos que 'Nome' é a primeira célula editável
-            // 3. Força o início do modo de edição
+                // Inicia edição
             dgvCircuitos.BeginEdit(true);
         }
     }
@@ -386,10 +537,10 @@ private void btnAdd_Click(object? sender, EventArgs e)
 
 private void btnDelete_Click(object? sender, EventArgs e)
 {
-    // Verifica se o utilizador tem permissão e se há alguma linha selecionada
+    // Só Staff e com seleção válida
     if (userRole == "Staff" && dgvCircuitos.SelectedRows.Count > 0 && circuitoTable != null)
     {
-        // Confirmação de segurança antes de eliminar
+        // Confirmação
         DialogResult dialogResult = MessageBox.Show(
             "Are you sure you want to delete the selected row(s)? This action cannot be undone.", 
             "Confirm Deletion", 
@@ -400,20 +551,20 @@ private void btnDelete_Click(object? sender, EventArgs e)
         {
             try
             {
-                // Percorre as linhas selecionadas (em ordem inversa para evitar problemas de índice)
+                // Percorre linhas selecionadas (ordem inversa)
                 foreach (DataGridViewRow row in dgvCircuitos.SelectedRows.Cast<DataGridViewRow>().OrderByDescending(r => r.Index))
                 {
-                    // Obtém a DataRow correspondente no DataTable
+                    // Obtém a DataRow correspondente
                     DataRow? dataRow = (row.DataBoundItem as DataRowView)?.Row;
                     
                     if (dataRow != null)
                     {
-                        // Marca a linha para eliminação
+                        // Marca para eliminação
                         dataRow.Delete();
                     }
                 }
                 
-                // Salva as alterações na BD imediatamente após a eliminação
+                // Grava alterações
                 btnSave_Click(sender, e); 
                 
                 // Recarrega os dados (opcional, mas garante que a visualização é atualizada)
@@ -421,7 +572,7 @@ private void btnDelete_Click(object? sender, EventArgs e)
             }
             catch (SqlException sqlEx)
             {
-                // Tratamento específico para erros de constraint de foreign key
+                // FK em uso
                 if (sqlEx.Message.Contains("REFERENCE constraint") || sqlEx.Message.Contains("FK_"))
                 {
                     MessageBox.Show(
@@ -435,12 +586,12 @@ private void btnDelete_Click(object? sender, EventArgs e)
                 {
                     MessageBox.Show($"Database error during deletion: {sqlEx.Message}", "Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                circuitoTable.RejectChanges(); // Reverte a eliminação se houver erro
+                circuitoTable.RejectChanges(); // Reverte em erro
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error during deletion: {ex.Message}", "Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                circuitoTable.RejectChanges(); // Reverte a eliminação se houver erro
+                circuitoTable.RejectChanges(); // Reverte em erro
             }
         }
     }
@@ -450,7 +601,7 @@ private void btnDelete_Click(object? sender, EventArgs e)
 
 private void btnRefresh_Click(object? sender, EventArgs e)
 {
-    // Confirma as alterações pendentes para evitar perda de dados
+    // Confirma alterações pendentes
     if (circuitoTable != null && circuitoTable.GetChanges() != null)
     {
         DialogResult result = MessageBox.Show(
@@ -462,26 +613,25 @@ private void btnRefresh_Click(object? sender, EventArgs e)
         if (result == DialogResult.Yes)
         {
             circuitoTable.RejectChanges();
-            LoadCircuitoData(); // Recarrega os dados do banco de dados
+            LoadCircuitoData(); // Recarrega dados
+            ApplySearchFilter();
         }
-        // Se o utilizador clicar em 'No', não faz nada.
     }
     else
     {
-        LoadCircuitoData(); // Não há alterações pendentes, carrega diretamente.
+        LoadCircuitoData(); // Sem alterações, recarrega
+        ApplySearchFilter();
     }
 }
-// Ficheiro: CircuitForm.cs
-
-        // You may need to add the btnDelete_Click method here (implementing logic to delete the selected row)
+        
 
         private void dgvCircuitos_CellContentClick(object? sender, DataGridViewCellEventArgs e)
         {
-            // Verifica se o clique foi na coluna do botão e numa linha válida
+            // Só reage aos cliques na coluna do botão
             var mapColumn = dgvCircuitos.Columns["MapColumn"];
             if (e.RowIndex >= 0 && mapColumn != null && e.ColumnIndex == mapColumn.Index)
             {
-                // Obtém o nome do circuito a partir da célula 'Nome' da linha clicada
+                // Nome do circuito na linha
                 string circuitName = dgvCircuitos.Rows[e.RowIndex].Cells["Nome"].Value?.ToString() ?? string.Empty;
 
                 if (!string.IsNullOrEmpty(circuitName))
@@ -500,7 +650,7 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                 return;
             }
 
-            if (dgvCircuitos.SelectedRows.Count == 0)
+            if (dgvCircuitos == null || dgvCircuitos.SelectedRows.Count == 0)
             {
                 MessageBox.Show("Please select a circuit first.", "No Selection",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -516,7 +666,7 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                 return;
             }
 
-            // Abrir diálogo para selecionar imagem
+            // Escolhe imagem a carregar
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Title = "Select Circuit Map Image";
@@ -527,7 +677,7 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                 {
                     try
                     {
-                        // Criar pasta mapasCircuitos se não existir
+                        // Garante pasta de mapas
                         string mapsFolderPath = Path.Combine(Application.StartupPath, @"..\..\..\mapasCircuitos");
                         string fullMapsFolderPath = Path.GetFullPath(mapsFolderPath);
 
@@ -536,11 +686,11 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                             Directory.CreateDirectory(fullMapsFolderPath);
                         }
 
-                        // Nome do ficheiro: nome do circuito com underscores + extensão .png
+                        // Nome do ficheiro: circuito + .png
                         string fileName = circuitName.Replace(' ', '_') + ".png";
                         string destinationPath = Path.Combine(fullMapsFolderPath, fileName);
 
-                        // Se já existe um mapa, perguntar se quer substituir
+                        // Se já existe, pergunta se substitui
                         if (File.Exists(destinationPath))
                         {
                             DialogResult result = MessageBox.Show(
@@ -554,11 +704,11 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                                 return;
                             }
 
-                            // Eliminar o ficheiro antigo
+                            // Remove antigo
                             File.Delete(destinationPath);
                         }
 
-                        // Copiar a imagem selecionada para a pasta de mapas
+                        // Copia imagem
                         File.Copy(openFileDialog.FileName, destinationPath, true);
 
                         MessageBox.Show($"Map uploaded successfully for '{circuitName}'!\n\nLocation: {destinationPath}",
@@ -571,6 +721,32 @@ private void btnRefresh_Click(object? sender, EventArgs e)
                     }
                 }
             }
+        }
+
+        private void btnViewGPs_Click(object? sender, EventArgs e)
+        {
+            if (dgvCircuitos == null || dgvCircuitos.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a circuit first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DataGridViewRow row = dgvCircuitos.SelectedRows[0];
+            object? idValue = dgvCircuitos.Columns.Contains("ID_Circuito") ? row.Cells["ID_Circuito"].Value : null;
+            object? nameValue = dgvCircuitos.Columns.Contains("Nome") ? row.Cells["Nome"].Value : null;
+
+            if (idValue == null || idValue == DBNull.Value || string.IsNullOrWhiteSpace(idValue.ToString()))
+            {
+                MessageBox.Show("Selected circuit has no valid ID.", "Invalid Circuit", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int circuitId = Convert.ToInt32(idValue);
+            string circuitName = nameValue?.ToString() ?? "Circuit";
+
+            // Open GP list filtered by this circuit
+            GPListForm gpList = new GPListForm(this.userRole, circuitId, circuitName);
+            gpList.ShowDialog();
         }
 
         private void ShowMapImage(string circuitName)
@@ -588,30 +764,30 @@ private void btnRefresh_Click(object? sender, EventArgs e)
 
                 if (File.Exists(fullPath))
                 {
-                    // Cria um novo formulário para mostrar o mapa
+                    // Form para mostrar mapa
                     using (Form mapForm = new Form())
                     {
-                        mapForm.Text = "Mapa: " + circuitName;
+                        mapForm.Text = "Map: " + circuitName;
                         mapForm.Size = new Size(800, 600);
                         mapForm.StartPosition = FormStartPosition.CenterParent;
 
                         PictureBox pictureBox = new PictureBox();
                         pictureBox.Dock = DockStyle.Fill;
-                        pictureBox.Load(fullPath); // Usar Load é mais seguro que Image.FromFile
+                        pictureBox.Load(fullPath); // Load é mais seguro que Image.FromFile
                         pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
 
                         mapForm.Controls.Add(pictureBox);
-                        mapForm.ShowDialog(); // Mostra o formulário como uma janela de diálogo
+                        mapForm.ShowDialog();
                     }
                 }
                 else
                 {
-                    MessageBox.Show($"Mapa não encontrado para o circuito: {circuitName}\n\nCaminho procurado:\n{fullPath}", "Mapa não encontrado", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Map not found for circuit: {circuitName}\n\nPath checked:\n{fullPath}", "Map Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ocorreu um erro ao tentar mostrar o mapa:\n" + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error showing map:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

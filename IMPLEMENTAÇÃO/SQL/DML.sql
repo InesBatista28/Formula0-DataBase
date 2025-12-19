@@ -2,7 +2,7 @@
  * Script DML (Data Manipulation Language) com dados de exemplo.
  * A ordem das inserções é importante para respeitar as Foreign Keys.
  */
-/*
+
 -- 1. Inserir Circuitos 
 INSERT INTO Circuito (Nome, Cidade, Pais, Comprimento_km, NumCurvas)
 VALUES 
@@ -78,11 +78,12 @@ VALUES
 ('Loic Serra', 'French', '1972-09-20', 'M', 'Technical Chief', 3),
 ('Enrico Gualtieri', 'Italian', '1975-02-21', 'M', 'Technical Chief', 3),
 
--- 4. Red Bull Racing (ID_Equipa = 4)
-('Max Verstappen', 'Dutch', '1997-09-30', 'M', 'Driver', 4),
-('Yuki Tsunoda', 'Japanese', '2000-05-11', 'M', 'Driver', 4),
-('Laurent Mekies', 'French', '1977-04-28', 'M', 'Team Chief', 4),
-('Pierre Waché', 'French', '1974-12-10', 'M', 'Technical Chief', 4),
+-- 4. McLaren (ID_Equipa = 4)
+('Lando Norris', 'British', '1999-11-13', 'M', 'Driver', 4),
+('Oscar Piastri', 'Australian', '2001-04-06', 'M', 'Driver', 4),
+('Andrea Stella', 'Italian', '1971-02-22', 'M', 'Team Chief', 4),
+('Peter Prodromou', 'British', '1969-01-14', 'M', 'Technical Chief', 4),
+('Neil Houldey', 'British', '1976-03-14', 'M', 'Technical Chief', 4),
 
 -- 5. Mercedes-AMG (ID_Equipa = 5)
 ('George Russell', 'British', '1998-02-15', 'M', 'Driver', 5),
@@ -92,12 +93,11 @@ VALUES
 ('Toto Wolff', 'Austrian', '1972-01-12', 'M', 'Team Chief', 5),
 ('James Allison', 'British', '1968-02-22', 'M', 'Technical Chief', 5),
 
--- 6. McLaren (ID_Equipa = 6)
-('Lando Norris', 'British', '1999-11-13', 'M', 'Driver', 6),
-('Oscar Piastri', 'Australian', '2001-04-06', 'M', 'Driver', 6),
-('Andrea Stella', 'Italian', '1971-02-22', 'M', 'Team Chief', 6),
-('Peter Prodromou', 'British', '1969-01-14', 'M', 'Technical Chief', 6),
-('Neil Houldey', 'British', '1976-03-14', 'M', 'Technical Chief', 6),
+-- 6. Red Bull Racing (ID_Equipa = 6)
+('Max Verstappen', 'Dutch', '1997-09-30', 'M', 'Driver', 6),
+('Yuki Tsunoda', 'Japanese', '2000-05-11', 'M', 'Driver', 6),
+('Laurent Mekies', 'French', '1977-04-28', 'M', 'Team Chief', 6),
+('Pierre Waché', 'French', '1974-12-10', 'M', 'Technical Chief', 6),
 
 -- 7. Williams (ID_Equipa = 7)
 ('Alexander Albon', 'Thai', '1996-03-23', 'M', 'Driver', 7),
@@ -153,11 +153,12 @@ VALUES
 (2024, 2027, 'Technical Chief', 3000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Loic Serra' AND ID_Equipa = 3)),
 (2024, 2026, 'Technical Chief', 2500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Enrico Gualtieri' AND ID_Equipa = 3)),
 
--- 4. Red Bull Racing
-(2022, 2028, 'Driver', 55000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Max Verstappen' AND ID_Equipa = 4)),
-(2021, 2025, 'Driver', 3000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Yuki Tsunoda' AND ID_Equipa = 4)),
-(2024, 2026, 'Team Chief', 3500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Laurent Mekies' AND ID_Equipa = 4)),
-(2023, 2027, 'Technical Chief', 5000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Pierre Waché' AND ID_Equipa = 4)),
+-- 4. McLaren
+(2022, 2027, 'Driver', 20000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Lando Norris' AND ID_Equipa = 4)),
+(2023, 2026, 'Driver', 8000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Oscar Piastri' AND ID_Equipa = 4)),
+(2023, 2027, 'Team Chief', 3500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Andrea Stella' AND ID_Equipa = 4)),
+(2014, 2026, 'Technical Chief', 2500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Peter Prodromou' AND ID_Equipa = 4)),
+(2022, 2026, 'Technical Chief', 2200000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Neil Houldey' AND ID_Equipa = 4)),
 
 -- 5. Mercedes-AMG
 (2022, 2026, 'Driver', 15000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'George Russell' AND ID_Equipa = 5)),
@@ -167,12 +168,11 @@ VALUES
 (2013, 2026, 'Team Chief', 16000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Toto Wolff' AND ID_Equipa = 5)),
 (2023, 2026, 'Technical Chief', 4000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'James Allison' AND ID_Equipa = 5)),
 
--- 6. McLaren
-(2022, 2027, 'Driver', 20000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Lando Norris' AND ID_Equipa = 6)),
-(2023, 2026, 'Driver', 8000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Oscar Piastri' AND ID_Equipa = 6)),
-(2023, 2027, 'Team Chief', 3500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Andrea Stella' AND ID_Equipa = 6)),
-(2014, 2026, 'Technical Chief', 2500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Peter Prodromou' AND ID_Equipa = 6)),
-(2022, 2026, 'Technical Chief', 2200000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Neil Houldey' AND ID_Equipa = 6)),
+-- 6. Red Bull Racing
+(2022, 2028, 'Driver', 55000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Max Verstappen' AND ID_Equipa = 6)),
+(2021, 2025, 'Driver', 3000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Yuki Tsunoda' AND ID_Equipa = 6)),
+(2024, 2026, 'Team Chief', 3500000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Laurent Mekies' AND ID_Equipa = 6)),
+(2023, 2027, 'Technical Chief', 5000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Pierre Waché' AND ID_Equipa = 6)),
 
 -- 7. Williams
 (2022, 2026, 'Driver', 3000000.00, 'M', (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Alexander Albon' AND ID_Equipa = 7)),
@@ -216,17 +216,17 @@ VALUES
 (16, 'LEC', 3, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Charles Leclerc')),
 (44, 'HAM', 3, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Lewis Hamilton')),
 
--- Red Bull Racing
-(1, 'VER', 4, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Max Verstappen')),
-(22, 'TSU', 4, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Yuki Tsunoda')),
+-- McLaren
+(4, 'NOR', 4, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Lando Norris')),
+(81, 'PIA', 4, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Oscar Piastri')),
 
 -- Mercedes
 (63, 'RUS', 5, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'George Russell')),
 (12, 'ANT', 5, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Kimi Antonelli')),
 
--- McLaren
-(4, 'NOR', 6, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Lando Norris')),
-(81, 'PIA', 6, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Oscar Piastri')),
+-- Red Bull Racing
+(1, 'VER', 6, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Max Verstappen')),
+(22, 'TSU', 6, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Yuki Tsunoda')),
 
 -- Williams
 (23, 'ALB', 7, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Alexander Albon')),
@@ -243,20 +243,19 @@ VALUES
 -- Sauber / Audi
 (27, 'HUL', 10, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Nico Hülkenberg')),
 (5, 'BOR', 10, (SELECT ID_Membro FROM Membros_da_Equipa WHERE Nome = 'Gabriel Bortoleto'));
-*/
-
 -- Inserir as temporadas de 2024 e 2025
 -- A ordem é importante: a tabela Temporada deve ter dados antes da tabela Grande_Prémio
-INSERT INTO Temporada (Ano, NumCorridas)
-VALUES 
-(2024, 24),
-(2025, 24);
+IF NOT EXISTS (SELECT 1 FROM Temporada WHERE Ano = 2024)
+    INSERT INTO Temporada (Ano, NumCorridas) VALUES (2024, 24);
+
+IF NOT EXISTS (SELECT 1 FROM Temporada WHERE Ano = 2025)
+    INSERT INTO Temporada (Ano, NumCorridas) VALUES (2025, 24);
 
 -- Verificar se foram inseridas corretamente
 SELECT * FROM Temporada;
 
 -- 7. Inserir Grande Prémio (depende de Circuito e Temporada)
-INSERT INTO Grande_Prémio (Nome, DataCorrida, NumeroVoltas, ID_Circuito, Ano_Temporada)
+INSERT INTO Grande_Prémio (NomeGP, DataCorrida, NumeroVoltas, ID_Circuito, Ano_Temporada)
 VALUES 
 -- Australian Grand Prix
 ('Australian Grand Prix 2024', '2024-03-24', 58, (SELECT ID_Circuito FROM Circuito WHERE Nome = 'Albert Park Circuit'), 2024),
@@ -695,59 +694,173 @@ VALUES
 
 -- 9. Inserir Resultados (depende de Sessões e Piloto)
 -- NOTA: IDs começam em 3 porque já existiam dados anteriores
-INSERT INTO Resultados (NomeSessão, NomeGP, ID_Piloto, PosiçãoGrid, PosiçãoFinal, Pontos, Status)
+INSERT INTO Resultados (NomeSessão, NomeGP, ID_Piloto, PosiçãoGrid, TempoFinal, PosiçãoFinal, Pontos, Status)
 VALUES
+-- Qualifying: Lap times para cada piloto (formato TIME)
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44), 0, '00:01:15.915', 1, 0, 'Completed'),
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1),  0, '00:01:16.024', 2, 0, 'Completed'), -- VER
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16), 0, '00:01:16.157', 3, 0, 'Completed'), -- LEC
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81), 0, '00:01:16.298', 4, 0, 'Completed'), -- PIA
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63), 0, '00:01:16.412', 5, 0, 'Completed'), -- RUS
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10), 0, '00:01:16.543', 6, 0, 'Completed'), -- GAS
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55), 0, '00:01:16.687', 7, 0, 'Completed'), -- SAI
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 14), 0, '00:01:16.794', 8, 0, 'Completed'), -- ALO
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12), 0, '00:01:16.921', 9, 0, 'Completed'), -- ANT
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 23), 0, '00:01:17.045', 10, 0, 'Completed'),-- ALB
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43), 0, '00:01:17.189', 11, 0, 'Completed'),-- COL
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22), 0, '00:01:17.312', 12, 0, 'Completed'),-- TSU
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31), 0, '00:01:17.456', 13, 0, 'Completed'),-- OCO
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 27), 0, '00:01:17.587', 14, 0, 'Completed'),-- HUL
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18), 0, '00:01:17.723', 15, 0, 'Completed'),-- STR
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87), 0, '00:01:17.891', 16, 0, 'Completed'),-- BEA
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 30), 0, '00:01:18.034', 17, 0, 'Completed'),-- LAW
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5),  0, '00:01:18.197', 18, 0, 'Completed'),-- BOR
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6),  0, '00:01:18.365', 19, 0, 'Completed'),-- HAD
+('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4),  0, '00:01:18.521', 20, 0, 'Completed'),
 
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44), 0, 1, 0, 'Completed', '01:15.915'),
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1),  0, 2, 0, 'Completed', '01:16.120'), -- VER
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16), 0, 3, 0, 'Completed', '01:16.210'), -- LEC
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81), 0, 4, 0, 'Completed', '01:16.455'), -- PIA
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63), 0, 5, 0, 'Completed', '01:16.512'), -- RUS
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10), 0, 6, 0, 'Completed', '01:16.680'), -- GAS
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55), 0, 7, 0, 'Completed', '01:16.702'), -- SAI
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 14), 0, 8, 0, 'Completed', '01:16.890'), -- ALO
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12), 0, 9, 0, 'Completed', '01:16.911'), -- ANT
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 23), 0, 10, 0, 'Completed', '01:17.050'),-- ALB
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43), 0, 11, 0, 'Completed', '01:17.110'),-- COL
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22), 0, 12, 0, 'Completed', '01:17.250'),-- TSU
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31), 0, 13, 0, 'Completed', '01:17.400'),-- OCO
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 27), 0, 14, 0, 'Completed', '01:17.550'),-- HUL
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18), 0, 15, 0, 'Completed', '01:17.680'),-- STR
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87), 0, 16, 0, 'Completed', '01:17.800'),-- BEA
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 30), 0, 17, 0, 'Completed', '01:17.920'),-- LAW
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5),  0, 18, 0, 'Completed', '01:18.100'),-- BOR
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6),  0, 19, 0, 'Completed', '01:18.450'),-- HAD
-('Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4),  0, 20, 0, 'Completed', '01:19.200'),
+-- Race: Tempos finais de corrida (tempo total da corrida)
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44), 1, '01:28:50.123', 1, 25, 'Finished'), 
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16), 3, '01:28:52.456', 2, 18, 'Finished'), -- LEC +2.333s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1), 2, '01:28:55.789', 3, 15, 'Finished'), -- VER +5.666s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63), 5, '01:29:02.134', 4, 12, 'Finished'), -- RUS +12.011s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81), 4, '01:29:08.567', 5, 10, 'Finished'), -- PIA +18.444s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10), 6, '01:29:15.234', 6, 8, 'Finished'), -- GAS +25.111s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55), 7, '01:29:22.678', 7, 6, 'Finished'), -- SAI +32.555s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 14), 8, '01:29:28.912', 8, 4, 'Finished'), -- ALO +38.789s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43), 11, '01:29:35.345', 9, 2, 'Finished'), -- COL +45.222s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12), 9, '01:29:41.678', 10, 1, 'Finished'), -- ANT +51.555s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 23), 10, '01:29:48.234', 11, 0, 'Finished'), -- ALB +58.111s
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22), 12, '01:29:54.567', 12, 0, 'Finished'), -- TSU +1:04.444
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31), 13, '01:30:01.123', 13, 0, 'Finished'), -- OCO +1:11.000
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 27), 14, '01:30:07.456', 14, 0, 'Finished'), -- HUL +1:17.333
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18), 15, '01:30:13.789', 15, 0, 'Finished'), -- STR +1:23.666
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87), 16, '01:30:20.234', 16, 0, 'Finished'), -- BEA +1:30.111
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 30), 17, '01:30:26.567', 17, 0, 'Finished'), -- LAW +1:36.444
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5), 18, '01:30:32.912', 18, 0, 'Finished'), -- BOR +1:42.789
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6), 19, '01:30:39.345', 19, 0, 'Finished'), -- HAD +1:49.222
+('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4), 20, '01:30:45.678', 20, 0, 'Finished'); -- NOR +1:55.555
 
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44), 1, 1, 25, 'Finished', '01:28:50.123'), 
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16), 3, 2, 18, 'Finished', '01:28:52.450'), -- LEC (+2.3s)
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1), 2, 3, 15, 'Finished', '01:28:55.800'),  -- VER (+5.6s)
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63), 5, 4, 12, 'Finished', '01:29:05.110'), -- RUS
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81), 4, 5, 10, 'Finished', '01:29:10.500'), -- PIA
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10), 6, 6, 8, 'Finished', '01:29:15.300'),  -- GAS
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55), 7, 7, 6, 'Finished', '01:29:20.900'),  -- SAI
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 14), 8, 8, 4, 'Finished', '01:29:25.100'),  -- ALO
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43), 11, 9, 2, 'Finished', '01:29:30.400'), -- COL
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12), 9, 10, 1, 'Finished', '01:29:35.000'), -- ANT
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 23), 10, 11, 0, 'Finished', '01:29:40.200'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22), 12, 12, 0, 'Finished', '01:29:45.500'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31), 13, 13, 0, 'Finished', '01:29:50.100'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 27), 14, 14, 0, 'Finished', '01:29:55.300'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18), 15, 15, 0, 'Finished', '01:30:05.000'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87), 16, 16, 0, 'Finished', '01:30:10.400'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 30), 17, 17, 0, 'Finished', '01:30:15.800'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5), 18, 18, 0, 'Finished', '01:30:25.200'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6), 19, 19, 0, 'Finished', '01:30:40.000'),
-('Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4), 20, 20, 0, 'Finished', '01:31:10.000');
-/*
--- 10. Inserir Staff (administradores do sistema + todos os membros da equipa com username e password)
-INSERT INTO Staff (Username, Password, NomeCompleto, Role)
+-- 10. Inserir Pitstops (depende de Piloto e Sessões)
+-- Australian Grand Prix 2025 - Race Pitstops
+INSERT INTO Pitstop (NumeroVolta, DuraçãoParagem, DuraçãoPitlane, NomeSessão, NomeGP, ID_Piloto)
 VALUES
--- Administradores do sistema
-('admin2', 'admin123', 'Administrator', 'Staff'),
+-- Hamilton (44) - 2 stops strategy
+(15, '00:00:02.234', '00:00:21.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44)),
+(38, '00:00:02.189', '00:00:20.987', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 44)),
 
--- 1. Alpine
-('pgasly', 'alpine2025', 'Pierre Gasly', 'Staff'),
+-- Leclerc (16) - 2 stops strategy
+(16, '00:00:02.567', '00:00:22.134', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16)),
+(39, '00:00:02.401', '00:00:21.789', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 16)),
+
+-- Verstappen (1) - 2 stops strategy
+(17, '00:00:02.890', '00:00:23.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1)),
+(40, '00:00:02.123', '00:00:21.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1)),
+
+-- Russell (63) - 2 stops strategy
+(18, '00:00:02.345', '00:00:22.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63)),
+(41, '00:00:02.678', '00:00:22.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 63)),
+
+-- Piastri (81) - 2 stops strategy (home race)
+(14, '00:00:02.112', '00:00:21.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81)),
+(36, '00:00:02.890', '00:00:23.123', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 81)),
+
+-- Gasly (10) - 2 stops strategy
+(19, '00:00:02.456', '00:00:22.678', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10)),
+(42, '00:00:02.234', '00:00:21.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 10)),
+
+-- Sainz (55) - 2 stops strategy
+(20, '00:00:02.567', '00:00:23.012', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55)),
+(43, '00:00:02.389', '00:00:22.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 55)),
+
+-- Alonso (14) - 1 stop strategy (veteran!)
+(28, '00:00:02.678', '00:00:22.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 14)),
+
+-- Colapinto (43) - 2 stops strategy
+(21, '00:00:02.901', '00:00:23.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43)),
+(44, '00:00:02.456', '00:00:22.678', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 43)),
+
+-- Antonelli (12) - 2 stops strategy (rookie)
+(22, '00:00:03.123', '00:00:24.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12)),
+(45, '00:00:02.789', '00:00:23.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12)),
+
+-- Albon (23) - 1 stop strategy
+(30, '00:00:02.567', '00:00:22.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 23)),
+
+-- Tsunoda (22) - 2 stops strategy
+(23, '00:00:02.456', '00:00:22.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22)),
+(46, '00:00:02.678', '00:00:23.123', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22)),
+
+-- Ocon (31) - 2 stops strategy
+(24, '00:00:02.890', '00:00:23.789', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31)),
+(47, '00:00:02.345', '00:00:22.012', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 31)),
+
+-- Hülkenberg (27) - 1 stop strategy
+(32, '00:00:02.678', '00:00:23.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 27)),
+
+-- Stroll (18) - 2 stops strategy
+(25, '00:00:03.234', '00:00:24.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18)),
+(48, '00:00:02.890', '00:00:23.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18)),
+
+-- Bearman (87) - 2 stops strategy (rookie)
+(26, '00:00:03.456', '00:00:25.123', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87)),
+(49, '00:00:03.012', '00:00:24.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87)),
+
+-- Lawson (30) - 1 stop strategy
+(33, '00:00:02.789', '00:00:23.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 30)),
+
+-- Bortoleto (5) - 2 stops strategy (rookie)
+(27, '00:00:03.567', '00:00:25.678', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5)),
+(50, '00:00:03.234', '00:00:24.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 5)),
+
+-- Hadjar (6) - 2 stops strategy (rookie)
+(28, '00:00:03.890', '00:00:26.234', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6)),
+(51, '00:00:03.456', '00:00:25.567', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6)),
+
+-- Norris (4) - 3 stops strategy (disaster race - had to recover)
+(12, '00:00:02.345', '00:00:22.123', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4)),
+(29, '00:00:02.567', '00:00:22.890', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4)),
+(52, '00:00:02.789', '00:00:23.456', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4));
+
+-- 11. Inserir Penalizações (depende de Piloto e Sessões)
+-- Australian Grand Prix 2025 - Penalties
+INSERT INTO Penalizações (TipoPenalização, Motivo, NomeSessão, NomeGP, ID_Piloto)
+VALUES
+-- QUALIFYING PENALTIES
+-- Norris - Grid penalty for impeding in qualifying (manifests in race starting grid)
+('Grid Penalty (-3 positions)', 'Impeding another driver during Qualifying', 'Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 4)),
+
+-- Tsunoda - Warning for track limits in qualifying
+('Warning', 'Exceeding track limits multiple times (Turns 9 and 10)', 'Qualifying', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 22)),
+
+-- RACE PENALTIES
+-- Verstappen - 5s time penalty for unsafe release
+('5 Second Time Penalty', 'Unsafe release from pit box on lap 17', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 1)),
+
+-- Stroll - 5s time penalty for forcing another driver off track
+('5 Second Time Penalty', 'Forcing Bearman off track at Turn 3', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 18)),
+
+-- Hadjar - 10s time penalty for causing collision
+('10 Second Time Penalty', 'Causing collision with Bortoleto at Turn 1', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 6)),
+
+-- Bearman - Warning for pit lane speeding
+('Warning', 'Exceeding pit lane speed limit by 2 km/h', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 87)),
+
+-- Antonelli - 5s time penalty for gaining advantage off track
+('5 Second Time Penalty', 'Gaining lasting advantage by leaving track at Turn 6', 'Race', 'Australian Grand Prix 2025', (SELECT ID_Piloto FROM Piloto WHERE NumeroPermanente = 12));
+
+
+-- 12. Inserir Staff (administradores do sistema + todos os membros da equipa com username e password)
+-- Verificar se já existem para evitar duplicados
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'admin')
+BEGIN
+    INSERT INTO Staff (Username, Password, NomeCompleto, Role)
+    VALUES
+    -- Administradores do sistema
+    ('admin', 'admin123', 'System Administrator', 'Staff'),
+    ('testadmin', 'test123', 'Test Administrator', 'Staff'),
+    
+    -- 1. Alpine
+    ('pgasly', 'alpine2025', 'Pierre Gasly', 'Staff'),
 ('fcolapinto', 'alpine2025', 'Franco Colapinto', 'Staff'),
 ('jdoohan', 'alpine2025', 'Jack Doohan', 'Staff'),
 ('paron', 'alpine2025', 'Paul Aron', 'Staff'),
@@ -813,10 +926,11 @@ VALUES
 ('tgoss', 'vcarb2025', 'Tim Goss', 'Staff'),
 
 -- 10. Sauber / Audi
-('nhulkenberg', 'sauber2025', 'Nico Hülkenberg', 'Staff'),
-('gbortoleto', 'sauber2025', 'Gabriel Bortoleto', 'Staff'),
-('jwheatley', 'sauber2025', 'Jonathan Wheatley', 'Staff'),
-('jkey', 'sauber2025', 'James Key', 'Staff');
+    ('nhulkenberg', 'sauber2025', 'Nico Hülkenberg', 'Staff'),
+    ('gbortoleto', 'sauber2025', 'Gabriel Bortoleto', 'Staff'),
+    ('jwheatley', 'sauber2025', 'Jonathan Wheatley', 'Staff'),
+    ('jkey', 'sauber2025', 'James Key', 'Staff');
+END
 
 
 

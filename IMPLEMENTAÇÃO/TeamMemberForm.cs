@@ -8,8 +8,9 @@ namespace ProjetoFBD
 {
     public partial class TeamMemberForm : Form
     {
-        private DataGridView? dgvMembers;
-        private Panel? pnlStaffActions;
+        // Initialized in SetupLayout()
+        private DataGridView dgvMembers = null!;
+        private Panel pnlStaffActions = null!;
         
         private string userRole;
         private SqlDataAdapter? dataAdapter;
@@ -130,39 +131,41 @@ namespace ProjetoFBD
                 memberTable = new DataTable();
                 dataAdapter.Fill(memberTable);
                 
-                if (dgvMembers != null && dgvMembers.Columns != null)
+                if (dgvMembers.Columns != null)
                 {
                     dgvMembers.DataSource = memberTable;
 
-                    if (dgvMembers.Columns.Contains("ID_Membro") && dgvMembers.Columns["ID_Membro"] != null)
+                    DataGridViewColumn? c;
+
+                    if (dgvMembers.Columns.Contains("ID_Membro") && (c = dgvMembers.Columns["ID_Membro"]) != null)
                     {
-                        dgvMembers.Columns["ID_Membro"].HeaderText = "Member ID";
-                        dgvMembers.Columns["ID_Membro"].ReadOnly = true;
-                        dgvMembers.Columns["ID_Membro"].Width = 80;
+                        c.HeaderText = "Member ID";
+                        c.ReadOnly = true;
+                        c.Width = 80;
                     }
-                    
-                    if (dgvMembers.Columns.Contains("Nome") && dgvMembers.Columns["Nome"] != null)
-                        dgvMembers.Columns["Nome"].HeaderText = "Name";
-                    
-                    if (dgvMembers.Columns.Contains("Nacionalidade") && dgvMembers.Columns["Nacionalidade"] != null)
-                        dgvMembers.Columns["Nacionalidade"].HeaderText = "Nationality";
-                    
-                    if (dgvMembers.Columns.Contains("DataNascimento") && dgvMembers.Columns["DataNascimento"] != null)
-                        dgvMembers.Columns["DataNascimento"].HeaderText = "Birth Date";
-                    
-                    if (dgvMembers.Columns.Contains("Género") && dgvMembers.Columns["Género"] != null)
-                        dgvMembers.Columns["Género"].HeaderText = "Gender";
-                    
-                    if (dgvMembers.Columns.Contains("Função") && dgvMembers.Columns["Função"] != null)
-                        dgvMembers.Columns["Função"].HeaderText = "Role";
-                    
-                    if (dgvMembers.Columns.Contains("ID_Equipa") && dgvMembers.Columns["ID_Equipa"] != null)
-                        dgvMembers.Columns["ID_Equipa"].Visible = false;
-                    
-                    if (dgvMembers.Columns.Contains("TeamName") && dgvMembers.Columns["TeamName"] != null)
+
+                    if (dgvMembers.Columns.Contains("Nome") && (c = dgvMembers.Columns["Nome"]) != null)
+                        c.HeaderText = "Name";
+
+                    if (dgvMembers.Columns.Contains("Nacionalidade") && (c = dgvMembers.Columns["Nacionalidade"]) != null)
+                        c.HeaderText = "Nationality";
+
+                    if (dgvMembers.Columns.Contains("DataNascimento") && (c = dgvMembers.Columns["DataNascimento"]) != null)
+                        c.HeaderText = "Birth Date";
+
+                    if (dgvMembers.Columns.Contains("Género") && (c = dgvMembers.Columns["Género"]) != null)
+                        c.HeaderText = "Gender";
+
+                    if (dgvMembers.Columns.Contains("Função") && (c = dgvMembers.Columns["Função"]) != null)
+                        c.HeaderText = "Role";
+
+                    if (dgvMembers.Columns.Contains("ID_Equipa") && (c = dgvMembers.Columns["ID_Equipa"]) != null)
+                        c.Visible = false;
+
+                    if (dgvMembers.Columns.Contains("TeamName") && (c = dgvMembers.Columns["TeamName"]) != null)
                     {
-                        dgvMembers.Columns["TeamName"].HeaderText = "Team";
-                        dgvMembers.Columns["TeamName"].ReadOnly = true;
+                        c.HeaderText = "Team";
+                        c.ReadOnly = true;
                     }
                 }
             }

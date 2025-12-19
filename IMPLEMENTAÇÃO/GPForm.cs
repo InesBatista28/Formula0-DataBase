@@ -16,6 +16,11 @@ namespace ProjetoFBD
         private SqlDataAdapter? dataAdapter;
         private DataTable? gpTable;
 
+        // Search controls (match Circuits page pattern)
+        private Panel? pnlSearch;
+        private Label? lblSearch;
+        private TextBox? txtSearch;
+
         public GPForm(string role)
         {
             InitializeComponent(); // DEVE ser chamado primeiro
@@ -38,12 +43,50 @@ namespace ProjetoFBD
             // --- 1. Configurar DataGridView existente ---
             if (dgvGrandPrix != null)
             {
-                dgvGrandPrix.Location = new Point(10, 10);
-                dgvGrandPrix.Size = new Size(1160, 480);
+                dgvGrandPrix.Location = new Point(10, 60); // leave space for search bar
+                dgvGrandPrix.Size = new Size(1160, 430);
                 dgvGrandPrix.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                 dgvGrandPrix.AllowUserToAddRows = false;
                 dgvGrandPrix.ReadOnly = true;
+
+                // Preencher o ecrã e evitar quebras de linha
+                dgvGrandPrix.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                dgvGrandPrix.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+                dgvGrandPrix.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+                dgvGrandPrix.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+
+                // Configure columns only after binding completes (prevents null refs)
+                dgvGrandPrix.DataBindingComplete -= DgvGrandPrix_DataBindingComplete;
+                dgvGrandPrix.DataBindingComplete += DgvGrandPrix_DataBindingComplete;
             }
+
+            // --- 0. Barra de Pesquisa (Topo) ---
+            pnlSearch = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 50,
+                BackColor = Color.WhiteSmoke
+            };
+            this.Controls.Add(pnlSearch);
+
+            lblSearch = new Label
+            {
+                Text = "Search:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+            pnlSearch.Controls.Add(lblSearch);
+
+            txtSearch = new TextBox
+            {
+                Size = new Size(380, 27),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+            txtSearch.TextChanged += txtSearch_TextChanged;
+            pnlSearch.Controls.Add(txtSearch);
+
+            pnlSearch.SizeChanged += (s, e) => PositionSearchControls();
+            PositionSearchControls();
 
             // --- 2. Configurar Painéis existentes ---
             if (pnlStaffActions != null)
@@ -54,9 +97,9 @@ namespace ProjetoFBD
                 
                 // Criar e adicionar botões ao painel Staff
                 Button btnSave = CreateActionButton("Save Changes", new Point(0, 5));
-                Button btnAdd = CreateActionButton("Add New GP", new Point(140, 5));
-                Button btnDelete = CreateActionButton("Delete GP", new Point(280, 5));
-                Button btnRefresh = CreateActionButton("Refresh", new Point(420, 5));
+                Button btnAdd = CreateActionButton("Add New GP", new Point(0, 5));
+                Button btnDelete = CreateActionButton("Delete GP", new Point(0, 5));
+                Button btnRefresh = CreateActionButton("Refresh", new Point(0, 5));
 
                 btnSave.Click += btnSave_Click;
                 btnAdd.Click += btnAdd_Click;
@@ -67,6 +110,10 @@ namespace ProjetoFBD
                 pnlStaffActions.Controls.Add(btnAdd);
                 pnlStaffActions.Controls.Add(btnDelete);
                 pnlStaffActions.Controls.Add(btnRefresh);
+
+                // Distribuir botões de forma equidistante dentro do painel
+                DistributeButtons(pnlStaffActions);
+                pnlStaffActions.Resize += (s, e) => DistributeButtons(pnlStaffActions);
             }
 
             if (pnlAdditionalActions != null)
@@ -80,6 +127,10 @@ namespace ProjetoFBD
                 btnManageSessions.BackColor = Color.FromArgb(0, 102, 204);
                 btnManageSessions.Click += btnManageSessions_Click;
                 pnlAdditionalActions.Controls.Add(btnManageSessions);
+
+                // Centrar/Distribuir botão no painel
+                DistributeButtons(pnlAdditionalActions);
+                pnlAdditionalActions.Resize += (s, e) => DistributeButtons(pnlAdditionalActions);
             }
 
             // --- 3. Role-Based Access Control (RBAC) ---
@@ -142,9 +193,12 @@ namespace ProjetoFBD
                 
                 if (dgvGrandPrix != null)
                 {
+                    dgvGrandPrix.AutoGenerateColumns = true;
                     dgvGrandPrix.DataSource = gpTable;
-                    ConfigureColumnHeaders();
-                    
+
+                    // Configure columns once binding finishes to avoid nulls
+                    // (handler set in SetupGPLayout)
+
                     // Remover handlers existentes antes de adicionar novos
                     dgvGrandPrix.CellValidating -= DgvGrandPrix_CellValidating;
                     dgvGrandPrix.CellEndEdit -= DgvGrandPrix_CellEndEdit;
@@ -182,6 +236,10 @@ namespace ProjetoFBD
                     {
                         column.HeaderText = mapping.Value;
                         
+                        // Centrar todos os dados e cabeçalhos
+                        column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        column.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        
                         // Apenas NomeGP é read-only (chave primária)
                         if (mapping.Key == "NomeGP")
                         {
@@ -198,7 +256,26 @@ namespace ProjetoFBD
                         if (mapping.Key == "ID_Circuito" || mapping.Key == "Season")
                         {
                             column.DefaultCellStyle.Format = "N0";
-                            column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                        }
+
+                        // Ajustar tamanhos para preencher o ecrã e dar mais espaço ao NomeGP
+                        column.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+                        if (mapping.Key == "NomeGP")
+                        {
+                            column.FillWeight = 250; // mais espaço para o nome
+                            column.MinimumWidth = 220;
+                            if (column.DefaultCellStyle != null)
+                                column.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+                        }
+                        else if (mapping.Key == "DataCorrida")
+                        {
+                            column.FillWeight = 110;
+                            column.MinimumWidth = 110;
+                        }
+                        else // ID_Circuito e Season
+                        {
+                            column.FillWeight = 90;
+                            column.MinimumWidth = 90;
                         }
                     }
                 }
@@ -291,23 +368,15 @@ namespace ProjetoFBD
         {
             if (gpTable != null && userRole == "Staff")
             {
-                string gpName = Interaction.InputBox(
-                    "Enter the Grand Prix name:",
-                    "Add New Grand Prix",
-                    "");
-                
-                if (!string.IsNullOrWhiteSpace(gpName))
+                using (var addDialog = new AddGPDialog())
                 {
-                    gpName = gpName.Trim();
-                        
-                        // Validação adicional: não permitir apenas números
-                        if (gpName.All(char.IsDigit))
-                        {
-                            MessageBox.Show("Grand Prix name cannot contain only numbers!", 
-                                "Invalid Name", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            return;
-                        }
-                        
+                    if (addDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string gpName = addDialog.GPName;
+                        int circuitId = addDialog.CircuitID;
+                        int season = addDialog.Season;
+                        DateTime? raceDate = addDialog.RaceDate;
+
                         // Verificar se o GP já existe
                         bool gpExists = false;
                         foreach (DataRow row in gpTable.Rows)
@@ -332,17 +401,14 @@ namespace ProjetoFBD
                         {
                             DataRow newRow = gpTable.NewRow();
                             newRow["NomeGP"] = gpName;
-                            newRow["DataCorrida"] = DBNull.Value;
-                            newRow["ID_Circuito"] = DBNull.Value;
-                            newRow["Season"] = DBNull.Value; // Alterado de "Ano_Temporada" para "Season"
+                            newRow["DataCorrida"] = raceDate.HasValue ? (object)raceDate.Value : DBNull.Value;
+                            newRow["ID_Circuito"] = circuitId;
+                            newRow["Season"] = season;
                             
                             gpTable.Rows.InsertAt(newRow, 0);
                             
-                            if (dgvGrandPrix != null && dgvGrandPrix.Columns.Contains("DataCorrida"))
-                            {
-                                dgvGrandPrix.CurrentCell = dgvGrandPrix.Rows[0].Cells["DataCorrida"];
-                                dgvGrandPrix.BeginEdit(true);
-                            }
+                            // Salvar automaticamente
+                            btnSave_Click(sender, e);
                         }
                         catch (Exception ex)
                         {
@@ -350,6 +416,7 @@ namespace ProjetoFBD
                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
+                }
             }
         }
 
@@ -573,9 +640,81 @@ namespace ProjetoFBD
             dgvGrandPrix.Rows[e.RowIndex].ErrorText = "";
         }
 
+        private void DgvGrandPrix_DataBindingComplete(object? sender, DataGridViewBindingCompleteEventArgs e)
+        {
+            try
+            {
+                ConfigureColumnHeaders();
+                ApplySearchFilter();
+            }
+            catch { /* avoid bubbling to UI */ }
+        }
+
         // -------------------------------------------------------------------------
         // HELPER METHODS
         // -------------------------------------------------------------------------
+
+        private void DistributeButtons(Panel panel)
+        {
+            if (panel == null) return;
+            var buttons = panel.Controls.OfType<Button>().ToList();
+            if (buttons.Count == 0) return;
+
+            int panelWidth = panel.ClientSize.Width;
+            int panelHeight = panel.ClientSize.Height;
+            int totalButtonsWidth = buttons.Sum(b => b.Width);
+            int gaps = buttons.Count + 1;
+            int spacing = (panelWidth - totalButtonsWidth) / Math.Max(1, gaps);
+            if (spacing < 5) spacing = 5; // espaçamento mínimo
+
+            int x = spacing;
+            foreach (var btn in buttons)
+            {
+                int y = Math.Max(0, (panelHeight - btn.Height) / 2);
+                btn.Location = new Point(x, y);
+                btn.Anchor = AnchorStyles.Top; // manter posição relativa; redistribuímos no Resize
+                x += btn.Width + spacing;
+            }
+        }
+
+        private void PositionSearchControls()
+        {
+            if (pnlSearch == null || txtSearch == null || lblSearch == null) return;
+            int margin = 12;
+            int txtWidth = Math.Min(350, Math.Max(200, pnlSearch.ClientSize.Width / 4));
+            txtSearch.Size = new Size(txtWidth, txtSearch.Height);
+            int centerY = (pnlSearch.Height - txtSearch.Height) / 2;
+
+            int lblWidth = lblSearch.PreferredWidth + 6;
+            int startX = Math.Max(margin, 20);
+            lblSearch.Location = new Point(startX, centerY);
+            txtSearch.Location = new Point(startX + lblWidth, centerY);
+        }
+
+        private void txtSearch_TextChanged(object? sender, EventArgs e)
+        {
+            ApplySearchFilter();
+        }
+
+        private void ApplySearchFilter()
+        {
+            if (gpTable == null) return;
+            string term = txtSearch?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(term))
+            {
+                gpTable.DefaultView.RowFilter = string.Empty;
+                return;
+            }
+
+            string escaped = term.Replace("'", "''");
+            string filter =
+                $"Convert([NomeGP], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([ID_Circuito], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([Season], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([DataCorrida], 'System.String') LIKE '%{escaped}%'";
+
+            gpTable.DefaultView.RowFilter = filter;
+        }
 
         private bool CheckIfSeasonExists(int year)
         {
@@ -619,6 +758,256 @@ namespace ProjetoFBD
             {
                 return false;
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // DIALOG FOR ADDING NEW GP
+    // -------------------------------------------------------------------------
+    
+    public class AddGPDialog : Form
+    {
+        private TextBox txtGPName = null!;
+        private ComboBox cmbCircuit = null!;
+        private ComboBox cmbSeason = null!;
+        private DateTimePicker dtpRaceDate = null!;
+        private Button btnOK = null!;
+        private Button btnCancel = null!;
+
+        public string GPName => txtGPName?.Text?.Trim() ?? "";
+        public int CircuitID { get; private set; }
+        public int Season { get; private set; }
+        public DateTime? RaceDate => dtpRaceDate?.Checked == true ? dtpRaceDate.Value : (DateTime?)null;
+
+        public AddGPDialog()
+        {
+            InitializeComponent();
+            LoadCircuits();
+            LoadSeasons();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = "Add New Grand Prix";
+            this.Size = new Size(500, 320);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            // GP Name
+            Label lblGPName = new Label
+            {
+                Text = "Grand Prix Name:",
+                Location = new Point(20, 20),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblGPName);
+
+            txtGPName = new TextBox
+            {
+                Location = new Point(150, 18),
+                Size = new Size(310, 25)
+            };
+            this.Controls.Add(txtGPName);
+
+            // Circuit
+            Label lblCircuit = new Label
+            {
+                Text = "Circuit:",
+                Location = new Point(20, 60),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblCircuit);
+
+            cmbCircuit = new ComboBox
+            {
+                Location = new Point(150, 58),
+                Size = new Size(310, 25),
+                DropDownStyle = ComboBoxStyle.DropDown,
+                AutoCompleteMode = AutoCompleteMode.SuggestAppend,
+                AutoCompleteSource = AutoCompleteSource.ListItems
+            };
+            this.Controls.Add(cmbCircuit);
+
+            // Season
+            Label lblSeason = new Label
+            {
+                Text = "Season:",
+                Location = new Point(20, 100),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblSeason);
+
+            cmbSeason = new ComboBox
+            {
+                Location = new Point(150, 98),
+                Size = new Size(310, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            this.Controls.Add(cmbSeason);
+
+            // Race Date
+            Label lblRaceDate = new Label
+            {
+                Text = "Race Date:",
+                Location = new Point(20, 140),
+                Size = new Size(120, 20)
+            };
+            this.Controls.Add(lblRaceDate);
+
+            dtpRaceDate = new DateTimePicker
+            {
+                Location = new Point(150, 138),
+                Size = new Size(310, 25),
+                Format = DateTimePickerFormat.Short,
+                ShowCheckBox = true,
+                Checked = false
+            };
+            this.Controls.Add(dtpRaceDate);
+
+            // Buttons
+            btnOK = new Button
+            {
+                Text = "OK",
+                Location = new Point(260, 230),
+                Size = new Size(90, 35),
+                DialogResult = DialogResult.OK
+            };
+            btnOK.Click += BtnOK_Click;
+            this.Controls.Add(btnOK);
+
+            btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(370, 230),
+                Size = new Size(90, 35),
+                DialogResult = DialogResult.Cancel
+            };
+            this.Controls.Add(btnCancel);
+
+            this.AcceptButton = btnOK;
+            this.CancelButton = btnCancel;
+        }
+
+        private void LoadCircuits()
+        {
+            if (cmbCircuit == null) return;
+            
+            try
+            {
+                string connectionString = ProjetoFBD.DbConfig.ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT ID_Circuito, Nome, Cidade, Pais FROM Circuito ORDER BY Nome";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int id = reader.GetInt32(0);
+                            string nome = reader.GetString(1);
+                            string cidade = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                            string pais = reader.IsDBNull(3) ? "" : reader.GetString(3);
+                            
+                            string displayText = $"{nome} - {cidade}, {pais}";
+                            cmbCircuit.Items.Add(new CircuitItem { ID = id, DisplayText = displayText });
+                        }
+                    }
+                }
+
+                if (cmbCircuit.Items.Count > 0)
+                {
+                    cmbCircuit.DisplayMember = "DisplayText";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading circuits: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadSeasons()
+        {
+            if (cmbSeason == null) return;
+            
+            try
+            {
+                string connectionString = ProjetoFBD.DbConfig.ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT Ano FROM Temporada ORDER BY Ano DESC";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int year = reader.GetInt32(0);
+                            cmbSeason.Items.Add(year);
+                        }
+                    }
+                }
+
+                if (cmbSeason.Items.Count > 0)
+                {
+                    cmbSeason.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading seasons: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnOK_Click(object? sender, EventArgs e)
+        {
+            // Validações
+            if (txtGPName == null || string.IsNullOrWhiteSpace(txtGPName.Text))
+            {
+                MessageBox.Show("Please enter a Grand Prix name.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.DialogResult = DialogResult.None;
+                return;
+            }
+
+            if (txtGPName.Text.Trim().All(char.IsDigit))
+            {
+                MessageBox.Show("Grand Prix name cannot contain only numbers!", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.DialogResult = DialogResult.None;
+                return;
+            }
+
+            if (cmbCircuit == null || cmbCircuit.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a circuit.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.DialogResult = DialogResult.None;
+                return;
+            }
+
+            if (cmbSeason == null || cmbSeason.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a season.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.DialogResult = DialogResult.None;
+                return;
+            }
+
+            CircuitID = ((CircuitItem)cmbCircuit.SelectedItem).ID;
+            Season = (int)cmbSeason.SelectedItem;
+        }
+
+        private class CircuitItem
+        {
+            public int ID { get; set; }
+            public string DisplayText { get; set; } = "";
         }
     }
 }

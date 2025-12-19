@@ -19,6 +19,7 @@ DELETE FROM Membros_da_Equipa;
 DELETE FROM Equipa;
 DELETE FROM Temporada;
 DELETE FROM Circuito;
+DELETE FROM Staff;
 
 -- Reset dos contadores IDENTITY (para IDs começarem do 1 novamente)
 DBCC CHECKIDENT ('Pitstop', RESEED, 0);

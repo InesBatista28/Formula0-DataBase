@@ -18,6 +18,11 @@ namespace ProjetoFBD
         private DataGridView? dgvResults;
         private Panel? pnlStaffActions;
         
+        // Search controls
+        private Panel? pnlSearch;
+        private Label? lblSearch;
+        private TextBox? txtSearch;
+        
         private SqlDataAdapter? dataAdapter;
         private DataTable? resultsTable;
         private ResultsFilterMode filterMode;
@@ -112,11 +117,37 @@ namespace ProjetoFBD
             };
             this.Controls.Add(lblTitle);
 
+            // --- Barra de Pesquisa ---
+            pnlSearch = new Panel
+            {
+                Location = new Point(20, 60),
+                Size = new Size(1340, 45),
+                BackColor = Color.WhiteSmoke,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            this.Controls.Add(pnlSearch);
+
+            lblSearch = new Label
+            {
+                Text = "Search:",
+                AutoSize = true,
+                Location = new Point(10, 12)
+            };
+            pnlSearch.Controls.Add(lblSearch);
+
+            txtSearch = new TextBox
+            {
+                Size = new Size(380, 27),
+                Location = new Point(70, 10)
+            };
+            txtSearch.TextChanged += txtSearch_TextChanged;
+            pnlSearch.Controls.Add(txtSearch);
+
             dgvResults = new DataGridView
             {
                 Name = "dgvResults",
-                Location = new Point(20, 70),
-                Size = new Size(1340, 470),
+                Location = new Point(20, 115),
+                Size = new Size(1340, 425),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 ReadOnly = false,
                 AutoGenerateColumns = true
@@ -136,6 +167,16 @@ namespace ProjetoFBD
             Button btnAdd = CreateActionButton("Add Result", new Point(140, 5));
             Button btnDelete = CreateActionButton("Delete", new Point(270, 5));
             Button btnRefresh = CreateActionButton("Refresh", new Point(380, 5));
+            
+            // Adicionar botão de pitstops apenas para Race sessions
+            Button? btnViewPitstops = null;
+            if (filterMode == ResultsFilterMode.BySession && 
+                (filterValue == "Race" || filterValue == "Sprint Race"))
+            {
+                btnViewPitstops = CreateActionButton("View Pitstops", new Point(510, 5), Color.FromArgb(128, 0, 128));
+                btnViewPitstops.Click += btnViewPitstops_Click;
+                pnlStaffActions.Controls.Add(btnViewPitstops);
+            }
 
             btnSave.Click += btnSave_Click;
             btnAdd.Click += btnAdd_Click;
@@ -247,11 +288,16 @@ namespace ProjetoFBD
 
                     try
                     {
+                        // Centralizar todas as colunas
+                        foreach (DataGridViewColumn col in dgvResults.Columns)
+                        {
+                            col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        }
+
                         // Configure columns using BaseForm helper methods
                         MakeColumnReadOnly(dgvResults, "ID_Resultado");
-                        SetColumnHeader(dgvResults, "ID_Resultado", "Result ID");
-                        if (dgvResults.Columns.Contains("ID_Resultado"))
-                            dgvResults.Columns["ID_Resultado"]!.Width = 80;
+                        HideColumn(dgvResults, "ID_Resultado"); // Esconder ID
                         
                         SetColumnHeader(dgvResults, "PosiçãoGrid", "Grid Position");
                         SetColumnHeader(dgvResults, "TempoFinal", "Final Time");
@@ -567,6 +613,66 @@ namespace ProjetoFBD
             {
                 LoadResults();
             }
+        }
+
+        private void btnViewPitstops_Click(object? sender, EventArgs e)
+        {
+            if (filterMode == ResultsFilterMode.BySession && !string.IsNullOrEmpty(gpNameFilter))
+            {
+                try
+                {
+                    PitstopViewerDialog pitstopDialog = new PitstopViewerDialog(filterValue, gpNameFilter, this.userRole);
+                    pitstopDialog.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    ShowError($"Error opening pitstops: {ex.Message}");
+                }
+            }
+            else
+            {
+                ShowWarning("Pitstops can only be viewed from a specific Race session.");
+            }
+        }
+
+        private void txtSearch_TextChanged(object? sender, EventArgs e)
+        {
+            ApplySearchFilter();
+        }
+
+        private void ApplySearchFilter()
+        {
+            if (resultsTable == null) return;
+            string term = txtSearch?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(term))
+            {
+                resultsTable.DefaultView.RowFilter = string.Empty;
+                return;
+            }
+
+            string escaped = term.Replace("'", "''");
+            
+            // Filtrar por driver name, code, team, position, status
+            string filter =
+                $"Convert([DriverName], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([DriverCode], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([TeamName], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([Status], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([NumeroPermanente], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([PosiçãoFinal], 'System.String') LIKE '%{escaped}%' " +
+                $"OR Convert([PosiçãoGrid], 'System.String') LIKE '%{escaped}%'";
+            
+            // Adicionar filtros por GP e Session se as colunas não estiverem escondidas
+            if (filterMode != ResultsFilterMode.BySession && resultsTable.Columns.Contains("NomeSessão"))
+            {
+                filter += $" OR Convert([NomeSessão], 'System.String') LIKE '%{escaped}%'";
+            }
+            if (filterMode != ResultsFilterMode.BySession && resultsTable.Columns.Contains("GrandPrix"))
+            {
+                filter += $" OR Convert([GrandPrix], 'System.String') LIKE '%{escaped}%'";
+            }
+
+            resultsTable.DefaultView.RowFilter = filter;
         }
     }
 

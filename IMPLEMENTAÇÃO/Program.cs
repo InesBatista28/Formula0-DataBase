@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace ProjetoFBD
 {
@@ -8,9 +9,45 @@ namespace ProjetoFBD
         [STAThread]
         static void Main()
         {
+            // Global error handlers to exit cleanly on fatal errors
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += OnThreadException;
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new AppContext()); // Use AppContext, não LoadingPage!
+        }
+
+        private static void OnThreadException(object? sender, ThreadExceptionEventArgs e)
+        {
+            try
+            {
+                MessageBox.Show($"An unexpected error occurred and the application will close.\n\n{e.Exception.Message}",
+                    "Fatal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Application.Exit();
+            }
+        }
+
+        private static void OnUnhandledException(object? sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = e.ExceptionObject as Exception;
+            try
+            {
+                if (ex != null)
+                {
+                    MessageBox.Show($"An unexpected error occurred and the application will close.\n\n{ex.Message}",
+                        "Fatal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            finally
+            {
+                // Ensure termination even if forms are blocked
+                Environment.Exit(1);
+            }
         }
     }
 

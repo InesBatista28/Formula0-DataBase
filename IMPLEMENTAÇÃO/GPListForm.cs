@@ -12,6 +12,10 @@ namespace ProjetoFBD
         private int selectedYear;
         private DataGridView? dgvGPs;
         private Panel? pnlActions;
+        private bool isCircuitFilter;
+        private int? filterCircuitId;
+        private string? filterCircuitName;
+        private string titleText;
         
         public GPListForm(string role, int year)
         {
@@ -19,13 +23,37 @@ namespace ProjetoFBD
             
             this.userRole = role;
             this.selectedYear = year;
+            this.isCircuitFilter = false;
+            this.filterCircuitId = null;
+            this.filterCircuitName = null;
+            this.titleText = $"Grand Prix Events - {year} Season";
             
             // Configuração básica
-            this.Text = $"Grand Prix Events - {year} Season";
+            this.Text = titleText;
             this.Size = new Size(1000, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
             
             // Adicionar controles
+            SetupLayout();
+            LoadGPData();
+        }
+
+        // Constructor for filtering by circuit
+        public GPListForm(string role, int circuitId, string circuitName)
+        {
+            InitializeComponent();
+
+            this.userRole = role;
+            this.selectedYear = 0;
+            this.isCircuitFilter = true;
+            this.filterCircuitId = circuitId;
+            this.filterCircuitName = circuitName;
+            this.titleText = $"GPs at {circuitName}";
+
+            this.Text = titleText;
+            this.Size = new Size(1000, 700);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
             SetupLayout();
             LoadGPData();
         }
@@ -35,7 +63,7 @@ namespace ProjetoFBD
             // Título
             Label lblTitle = new Label
             {
-                Text = $"Grand Prix Events - {selectedYear} Season",
+                Text = titleText,
                 Location = new Point(20, 20),
                 Size = new Size(500, 30),
                 Font = new Font("Arial", 16, FontStyle.Bold),
@@ -57,6 +85,8 @@ namespace ProjetoFBD
                 RowHeadersVisible = false
             };
             this.Controls.Add(dgvGPs);
+            // Allow double-click to open details
+            dgvGPs.CellDoubleClick += DgvGPs_CellDoubleClick;
 
             // Painel para ações (botões)
             pnlActions = new Panel
@@ -109,25 +139,45 @@ namespace ProjetoFBD
 {
     try
     {
-        string connectionString = DbConfig.ConnectionString;
+            string connectionString = DbConfig.ConnectionString;
         
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            MessageBox.Show("Connection string is not configured.", "Configuration Error", 
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-        }
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                MessageBox.Show("Connection string is not configured.", "Configuration Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
     
-    // Consulta simplificada: mostrar apenas o nome do GP para o ano selecionado
-    string[] queries = new string[]
-    {
-        @"
-        SELECT 
-            NomeGP AS [Grand Prix Name]
-        FROM Grande_Prémio
-        WHERE Ano_Temporada = @Year
-        ORDER BY DataCorrida ASC"
-    };
+        // Query switches depending on filter mode
+        string[] queries;
+        if (isCircuitFilter && filterCircuitId.HasValue)
+        {
+            queries = new string[]
+            {
+                @"
+                SELECT 
+                    NomeGP AS [Grand Prix Name],
+                    DataCorrida AS [Race Date],
+                    Ano_Temporada AS Season
+                FROM Grande_Prémio
+                WHERE ID_Circuito = @CircuitId
+                ORDER BY DataCorrida ASC"
+            };
+        }
+        else
+        {
+            queries = new string[]
+            {
+                @"
+                SELECT 
+                    NomeGP AS [Grand Prix Name],
+                    DataCorrida AS [Race Date],
+                    Ano_Temporada AS Season
+                FROM Grande_Prémio
+                WHERE Ano_Temporada = @Year
+                ORDER BY DataCorrida ASC"
+            };
+        }
     
     DataTable gpTable = new DataTable();
     bool success = false;
@@ -142,7 +192,10 @@ namespace ProjetoFBD
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 SqlCommand command = new SqlCommand(queries[i], connection);
-                command.Parameters.AddWithValue("@Year", selectedYear);
+                if (isCircuitFilter && filterCircuitId.HasValue)
+                    command.Parameters.AddWithValue("@CircuitId", filterCircuitId.Value);
+                else
+                    command.Parameters.AddWithValue("@Year", selectedYear);
                 
                 SqlDataAdapter adapter = new SqlDataAdapter(command);
                 gpTable.Clear();
@@ -193,16 +246,38 @@ namespace ProjetoFBD
         dgvGPs.AutoGenerateColumns = false;
         dgvGPs.Columns.Clear();
         
-        // Manually add column to avoid any null reference issues
+        // Grand Prix Name
         DataGridViewTextBoxColumn gpColumn = new DataGridViewTextBoxColumn
         {
-            DataPropertyName = gpTable.Columns[0].ColumnName,
+            DataPropertyName = "Grand Prix Name",
             HeaderText = "Grand Prix Name",
             Name = "GPName",
-            Width = 400,
+            Width = 320,
             ReadOnly = true
         };
         dgvGPs.Columns.Add(gpColumn);
+
+        // Race Date
+        DataGridViewTextBoxColumn dateColumn = new DataGridViewTextBoxColumn
+        {
+            DataPropertyName = "Race Date",
+            HeaderText = "Race Date",
+            Name = "RaceDate",
+            Width = 200,
+            ReadOnly = true
+        };
+        dgvGPs.Columns.Add(dateColumn);
+
+        // Season
+        DataGridViewTextBoxColumn seasonColumn = new DataGridViewTextBoxColumn
+        {
+            DataPropertyName = "Season",
+            HeaderText = "Season",
+            Name = "Season",
+            Width = 120,
+            ReadOnly = true
+        };
+        dgvGPs.Columns.Add(seasonColumn);
         
         dgvGPs.DataSource = gpTable;
     }
@@ -225,11 +300,15 @@ namespace ProjetoFBD
             }
         }
         
+        string countLabel = isCircuitFilter && filterCircuitName != null
+            ? $"Total GPs for {filterCircuitName}: {gpTable.Rows.Count}"
+            : $"Total GPs: {gpTable.Rows.Count}";
+
         Label lblCount = new Label
         {
-            Text = $"Total GPs: {gpTable.Rows.Count}",
+            Text = countLabel,
             Location = new Point(500, 540),
-            Size = new Size(150, 30),
+            Size = new Size(300, 30),
             Font = new Font("Arial", 10, FontStyle.Bold),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
@@ -271,7 +350,17 @@ namespace ProjetoFBD
     
     // Open SessionForm for this GP
     ShowGPDetails(gpName);
+    // If this form is modal, close it so the Sessions page is visible
+    try { this.DialogResult = DialogResult.OK; } catch {}
+    this.Close();
 }
+
+        private void DgvGPs_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || dgvGPs == null) return;
+            dgvGPs.Rows[e.RowIndex].Selected = true;
+            btnViewDetails_Click(sender, EventArgs.Empty);
+        }
 
         private void btnAddGP_Click(object? sender, EventArgs e)
 {

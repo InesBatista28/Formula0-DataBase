@@ -26,13 +26,11 @@ namespace ProjetoFBD
         }
 
         #endregion
-
-        // Variáveis de Controlo (IMPORTANTE: Estas são as variáveis que o seu CS usa!)
-        // O código no CS deve usar estas declarações.
         private System.Windows.Forms.DataGridView dgvCircuitos;
         private System.Windows.Forms.Panel pnlStaffActions;
-        
-        // Embora o dataAdapter e o circuitoTable sejam usados na lógica, 
-        // mantemo-los no .CS para simplificar a gestão de dados.
+        private System.Windows.Forms.TextBox txtSearch;
+        private System.Windows.Forms.Label lblSearch;
+        private System.Windows.Forms.Panel pnlSearch;
+
     }
 }
