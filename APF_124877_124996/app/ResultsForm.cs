@@ -275,7 +275,7 @@ namespace ProjetoFBD
                         SetColumnHeader(dgvResults, "Pontos", "Points");
                         if (filterMode == ResultsFilterMode.BySession && !SessionUsesGridPosition(filterValue))
                         {
-                            HideColumn(dgvResults, "PosiÇõÇœoGrid");
+                            HideColumn(dgvResults, "PosiçãoGrid");
                         }
                         if (filterMode == ResultsFilterMode.BySession)
                         {
@@ -343,9 +343,9 @@ namespace ProjetoFBD
                         {
                             string rowSession = filterMode == ResultsFilterMode.BySession
                                 ? filterValue
-                                : row["NomeSessÇœo"]?.ToString() ?? string.Empty;
-                            object gridValue = SessionUsesGridPosition(rowSession) && row.Table.Columns.Contains("PosiÇõÇœoGrid")
-                                ? row["PosiÇõÇœoGrid"]
+                                : row["NomeSessão"]?.ToString() ?? string.Empty;
+                            object gridValue = SessionUsesGridPosition(rowSession) && row.Table.Columns.Contains("PosiçãoGrid")
+                                ? row["PosiçãoGrid"]
                                 : DBNull.Value;
 
                             if (row.RowState == DataRowState.Added)
@@ -355,10 +355,10 @@ namespace ProjetoFBD
                                     cmd.CommandType = CommandType.StoredProcedure;
                                     cmd.Parameters.AddWithValue("@PosicaoGrid", gridValue ?? (object)DBNull.Value);
                                     cmd.Parameters.AddWithValue("@TempoFinal", row["TempoFinal"] == DBNull.Value ? (object)DBNull.Value : row["TempoFinal"]);
-                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiÇõÇœoFinal"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiçãoFinal"]);
                                     cmd.Parameters.AddWithValue("@Status", row["Status"]);
                                     cmd.Parameters.AddWithValue("@Pontos", row["Pontos"]);
-                                    cmd.Parameters.AddWithValue("@NomeSessao", row["NomeSessÇœo"]);
+                                    cmd.Parameters.AddWithValue("@NomeSessao", row["NomeSessão"]);
                                     cmd.Parameters.AddWithValue("@NomeGP", row["GrandPrix"]);
                                     cmd.Parameters.AddWithValue("@ID_Piloto", row["ID_Piloto"]);
                                     cmd.ExecuteNonQuery();
@@ -372,7 +372,7 @@ namespace ProjetoFBD
                                     cmd.Parameters.AddWithValue("@ID_Resultado", row["ID_Resultado"]);
                                     cmd.Parameters.AddWithValue("@PosicaoGrid", gridValue ?? (object)DBNull.Value);
                                     cmd.Parameters.AddWithValue("@TempoFinal", row["TempoFinal"] == DBNull.Value ? (object)DBNull.Value : row["TempoFinal"]);
-                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiÇõÇœoFinal"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiçãoFinal"]);
                                     cmd.Parameters.AddWithValue("@Status", row["Status"]);
                                     cmd.Parameters.AddWithValue("@Pontos", row["Pontos"]);
                                     cmd.Parameters.AddWithValue("@NomeGP", row["GrandPrix"]);
@@ -458,7 +458,7 @@ namespace ProjetoFBD
                             DataRow newRow = resultsTable.NewRow();
                             newRow["ID_Piloto"] = dialog.SelectedDriverId;
                             newRow["NomeSessão"] = sessionName;
-                            newRow["PosiçãoGrid"] = dialog.GridPosition;
+                            newRow["PosiçãoGrid"] = dialog.GridPosition.HasValue ? (object)dialog.GridPosition.Value : DBNull.Value;
                             newRow["TempoFinal"] = string.IsNullOrWhiteSpace(dialog.FinalTime) ? DBNull.Value : (object)TimeSpan.Parse(dialog.FinalTime);
                             newRow["PosiçãoFinal"] = dialog.FinalPosition;
                             newRow["Status"] = dialog.Status;
@@ -475,7 +475,22 @@ namespace ProjetoFBD
                             }
                             resultsTable.Rows.Add(newRow);
                             if (dgvResults != null && dgvResults.Rows.Count > 0)
-                                dgvResults.CurrentCell = dgvResults.Rows[dgvResults.Rows.Count - 1].Cells[1];
+                            {
+                                var lastRow = dgvResults.Rows[dgvResults.Rows.Count - 1];
+                                int visibleColIndex = -1;
+                                foreach (DataGridViewColumn col in dgvResults.Columns)
+                                {
+                                    if (col.Visible)
+                                    {
+                                        visibleColIndex = col.Index;
+                                        break;
+                                    }
+                                }
+                                if (visibleColIndex >= 0)
+                                {
+                                    dgvResults.CurrentCell = lastRow.Cells[visibleColIndex];
+                                }
+                            }
                             ShowSuccess("Result added. Click 'Save Changes' to commit.");
                         }
                     }
@@ -615,7 +630,7 @@ namespace ProjetoFBD
     public class AddResultDialog : Form
     {
         public int SelectedDriverId { get; private set; }
-        public int GridPosition { get; private set; }
+        public int? GridPosition { get; private set; }
         public string FinalTime { get; private set; } = "";
         public int FinalPosition { get; private set; }
         public string Status { get; private set; } = "Finished";
@@ -628,18 +643,22 @@ namespace ProjetoFBD
         private ComboBox cmbStatus = null!;
         private Label lblPoints = null!;
         private Label lblGridPositionInfo = null!;
+        private Label lblGrid = null!;
         private string sessionName;
         private string? gpName;
+        private readonly bool usesGridPosition;
 
         public AddResultDialog(string sessionName, string? gpName)
         {
             this.sessionName = sessionName;
             this.gpName = gpName;
+            this.usesGridPosition = sessionName.Equals("Race", StringComparison.OrdinalIgnoreCase)
+                                 || sessionName.Equals("Sprint Race", StringComparison.OrdinalIgnoreCase);
             
             InitializeComponents();
             LoadDrivers();
             
-            if (sessionName == "Race" || sessionName == "Sprint Race")
+            if (usesGridPosition)
             {
                 LoadQualificationPositions();
             }
@@ -686,7 +705,7 @@ namespace ProjetoFBD
             yPos += 45;
 
             // Grid Position
-            Label lblGrid = new Label
+            lblGrid = new Label
             {
                 Text = "Grid Position:",
                 Location = new Point(20, yPos),
@@ -704,7 +723,7 @@ namespace ProjetoFBD
                 Value = 1,
                 Font = new Font("Arial", 10)
             };
-            if (sessionName == "Race" || sessionName == "Sprint Race")
+            if (usesGridPosition)
             {
                 nudGridPosition.ReadOnly = true;
                 nudGridPosition.BackColor = Color.LightGray;
@@ -717,12 +736,21 @@ namespace ProjetoFBD
                 Size = new Size(270, 40),
                 Font = new Font("Arial", 9, FontStyle.Italic),
                 ForeColor = Color.Gray,
-                Text = sessionName == "Race" ? "Auto-filled from Qualification" :
-                       sessionName == "Sprint Race" ? "Auto-filled from Sprint Qualification" :
-                       "Starting position on track"
+                Text = usesGridPosition
+                    ? (sessionName == "Race" ? "Auto-filled from Qualification" : "Auto-filled from Sprint Qualification")
+                    : "Not used for this session"
             };
             this.Controls.Add(lblGridPositionInfo);
-            yPos += 55;
+            if (!usesGridPosition)
+            {
+                lblGrid.Visible = false;
+                nudGridPosition.Visible = false;
+                lblGridPositionInfo.Visible = false;
+            }
+            else
+            {
+                yPos += 55;
+            }
 
             // Final Position
             Label lblFinal = new Label
@@ -743,7 +771,8 @@ namespace ProjetoFBD
                 Value = 1,
                 Font = new Font("Arial", 10)
             };
-            nudFinalPosition.ValueChanged += (s, e) => CalculatePoints();
+            if (usesGridPosition)
+                nudFinalPosition.ValueChanged += (s, e) => CalculatePoints();
             this.Controls.Add(nudFinalPosition);
             yPos += 45;
 
@@ -988,7 +1017,7 @@ namespace ProjetoFBD
 
             var selectedDriver = (DriverItem)cmbDriver.SelectedItem;
             SelectedDriverId = selectedDriver.ID;
-            GridPosition = (int)nudGridPosition.Value;
+            GridPosition = usesGridPosition ? (int?)nudGridPosition.Value : null;
             FinalPosition = (int)nudFinalPosition.Value;
             FinalTime = txtFinalTime.Text;
             Status = cmbStatus.SelectedItem?.ToString() ?? "Finished";

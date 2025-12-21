@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_DeleteCircuit
+CREATE  OR ALTER PROCEDURE sp_DeleteCircuit
     @ID_Circuito INT
 AS
 BEGIN

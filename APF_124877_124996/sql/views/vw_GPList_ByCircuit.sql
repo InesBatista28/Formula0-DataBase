@@ -1,4 +1,4 @@
-CREATE VIEW vw_GPList_ByCircuit AS
+CREATE OR ALTER VIEW vw_GPList_ByCircuit AS
 SELECT 
     NomeGP AS [Grand Prix Name],
     DataCorrida AS [Race Date],

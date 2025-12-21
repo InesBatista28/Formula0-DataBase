@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_AuthenticateStaff
+CREATE  OR ALTER PROCEDURE sp_AuthenticateStaff
     @StaffID INT,
     @Password NVARCHAR(100)
 AS

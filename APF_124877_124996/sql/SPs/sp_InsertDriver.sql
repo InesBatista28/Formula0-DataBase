@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_InsertDriver
+CREATE  OR ALTER PROCEDURE sp_InsertDriver
     @NumeroPermanente INT,
     @Abreviacao NVARCHAR(3),
     @ID_Equipa INT,

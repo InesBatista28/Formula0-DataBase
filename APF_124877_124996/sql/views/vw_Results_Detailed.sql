@@ -1,4 +1,4 @@
-CREATE VIEW vw_Results_Detailed AS
+CREATE OR ALTER VIEW vw_Results_Detailed AS
 SELECT 
     r.ID_Resultado,
     r.PosiçãoGrid,

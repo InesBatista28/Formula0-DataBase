@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_UpdateResult
+CREATE OR ALTER PROCEDURE sp_UpdateResult
     @ID_Resultado INT,
     @PosicaoGrid INT,
     @TempoFinal TIME = NULL,

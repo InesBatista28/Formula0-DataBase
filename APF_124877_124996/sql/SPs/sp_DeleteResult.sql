@@ -7,4 +7,4 @@ AS
 BEGIN
     DELETE FROM Resultados WHERE ID_Resultado = @ID_Resultado
 END
-GO\
+GO

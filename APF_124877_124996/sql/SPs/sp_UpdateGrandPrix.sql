@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_UpdateGrandPrix
+CREATE OR ALTER PROCEDURE sp_UpdateGrandPrix
     @NomeGP NVARCHAR(100),
     @DataCorrida DATE,
     @ID_Circuito INT,

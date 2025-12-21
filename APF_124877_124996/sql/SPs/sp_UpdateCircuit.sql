@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_UpdateCircuit
+CREATE  OR ALTER PROCEDURE sp_UpdateCircuit
     @ID_Circuito INT,
     @Nome NVARCHAR(100),
     @Cidade NVARCHAR(100),

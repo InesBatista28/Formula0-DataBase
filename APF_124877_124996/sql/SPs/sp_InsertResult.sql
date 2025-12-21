@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_InsertResult
+CREATE  OR ALTER PROCEDURE sp_InsertResult
     @PosicaoGrid INT,
     @TempoFinal TIME = NULL,
     @PosicaoFinal INT,

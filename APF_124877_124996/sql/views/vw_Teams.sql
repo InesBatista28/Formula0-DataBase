@@ -1,3 +1,3 @@
-CREATE VIEW vw_Teams AS
+CREATE OR ALTER VIEW vw_Teams AS
 SELECT ID_Equipa, Nome
 FROM Equipa;

@@ -1,4 +1,4 @@
-CREATE VIEW vw_GrandPrixDetails AS
+CREATE OR ALTER VIEW vw_GrandPrixDetails AS
 SELECT 
     gp.NomeGP,
     gp.DataCorrida,

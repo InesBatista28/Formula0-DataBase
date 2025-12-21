@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_InsertCircuit
+CREATE  OR ALTER PROCEDURE sp_InsertCircuit
     @Nome NVARCHAR(100),
     @Cidade NVARCHAR(100),
     @Pais NVARCHAR(100),

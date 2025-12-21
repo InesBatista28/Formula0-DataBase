@@ -1,4 +1,4 @@
-CREATE VIEW vw_Seasons_Overview AS
+CREATE OR ALTER VIEW vw_Seasons_Overview AS
 SELECT 
     t.Ano,
     ISNULL(gp.GPCount, 0) AS NumCorridas,
@@ -34,4 +34,3 @@ OUTER APPLY (
     GROUP BY e.Nome
     ORDER BY TotalPoints DESC, e.Nome ASC
 ) lt
-ORDER BY t.Ano DESC;

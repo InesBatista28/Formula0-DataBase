@@ -1,3 +1,3 @@
-CREATE VIEW vw_Seasons AS
+CREATE OR ALTER VIEW vw_Seasons AS
 SELECT Ano
 FROM Temporada;

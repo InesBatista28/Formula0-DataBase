@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_InsertTeamMember
+CREATE  OR ALTER PROCEDURE sp_InsertTeamMember
     @Nome NVARCHAR(100),
     @Nacionalidade NVARCHAR(100),
     @DataNascimento DATE,

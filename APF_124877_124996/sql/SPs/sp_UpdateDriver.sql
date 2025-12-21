@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_UpdateDriver
+CREATE  OR ALTER PROCEDURE sp_UpdateDriver
     @ID_Piloto INT,
     @NumeroPermanente INT,
     @Abreviacao NVARCHAR(3),
