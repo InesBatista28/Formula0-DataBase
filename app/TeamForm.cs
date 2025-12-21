@@ -15,7 +15,6 @@ namespace ProjetoFBD
         private Chart? chartTeamPoints;
         private TextBox? txtSearch;
         private DataTable? teamDataComplete;
-        
         private string userRole;
         private SqlDataAdapter? dataAdapter;
         private DataTable? teamTable;
@@ -87,7 +86,7 @@ namespace ProjetoFBD
                 RowHeadersVisible = false
             };
             
-            // Centralizar conteúdo das células
+            // Centralizar conteudo das celulas
             dgvTeams.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dgvTeams.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             
@@ -212,6 +211,7 @@ namespace ProjetoFBD
             return btn;
         }
 
+
         // -------------------------------------------------------------------------
         // DATA ACCESS METHODS (CRUD)
         // -------------------------------------------------------------------------
@@ -289,6 +289,7 @@ namespace ProjetoFBD
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void ApplyEnglishHeaders(DataGridView grid)
         {

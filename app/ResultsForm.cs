@@ -204,6 +204,12 @@ namespace ProjetoFBD
         }
 
 
+        private static bool SessionUsesGridPosition(string sessionName)
+        {
+            return sessionName.Equals("Race", StringComparison.OrdinalIgnoreCase)
+                || sessionName.Equals("Sprint Race", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void LoadResults()
         {
             string connectionString = DbConfig.ConnectionString;
@@ -267,6 +273,10 @@ namespace ProjetoFBD
                         SetColumnHeader(dgvResults, "PosiçãoFinal", "Final Position");
                         SetColumnHeader(dgvResults, "Status", "Status");
                         SetColumnHeader(dgvResults, "Pontos", "Points");
+                        if (filterMode == ResultsFilterMode.BySession && !SessionUsesGridPosition(filterValue))
+                        {
+                            HideColumn(dgvResults, "PosiÇõÇœoGrid");
+                        }
                         if (filterMode == ResultsFilterMode.BySession)
                         {
                             HideColumn(dgvResults, "NomeSessão");
@@ -331,17 +341,24 @@ namespace ProjetoFBD
                         connection.Open();
                         foreach (DataRow row in resultsTable.Rows)
                         {
+                            string rowSession = filterMode == ResultsFilterMode.BySession
+                                ? filterValue
+                                : row["NomeSessÇœo"]?.ToString() ?? string.Empty;
+                            object gridValue = SessionUsesGridPosition(rowSession) && row.Table.Columns.Contains("PosiÇõÇœoGrid")
+                                ? row["PosiÇõÇœoGrid"]
+                                : DBNull.Value;
+
                             if (row.RowState == DataRowState.Added)
                             {
                                 using (SqlCommand cmd = new SqlCommand("sp_InsertResult", connection))
                                 {
                                     cmd.CommandType = CommandType.StoredProcedure;
-                                    cmd.Parameters.AddWithValue("@PosicaoGrid", row["PosiçãoGrid"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoGrid", gridValue ?? (object)DBNull.Value);
                                     cmd.Parameters.AddWithValue("@TempoFinal", row["TempoFinal"] == DBNull.Value ? (object)DBNull.Value : row["TempoFinal"]);
-                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiçãoFinal"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiÇõÇœoFinal"]);
                                     cmd.Parameters.AddWithValue("@Status", row["Status"]);
                                     cmd.Parameters.AddWithValue("@Pontos", row["Pontos"]);
-                                    cmd.Parameters.AddWithValue("@NomeSessao", row["NomeSessão"]);
+                                    cmd.Parameters.AddWithValue("@NomeSessao", row["NomeSessÇœo"]);
                                     cmd.Parameters.AddWithValue("@NomeGP", row["GrandPrix"]);
                                     cmd.Parameters.AddWithValue("@ID_Piloto", row["ID_Piloto"]);
                                     cmd.ExecuteNonQuery();
@@ -353,9 +370,9 @@ namespace ProjetoFBD
                                 {
                                     cmd.CommandType = CommandType.StoredProcedure;
                                     cmd.Parameters.AddWithValue("@ID_Resultado", row["ID_Resultado"]);
-                                    cmd.Parameters.AddWithValue("@PosicaoGrid", row["PosiçãoGrid"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoGrid", gridValue ?? (object)DBNull.Value);
                                     cmd.Parameters.AddWithValue("@TempoFinal", row["TempoFinal"] == DBNull.Value ? (object)DBNull.Value : row["TempoFinal"]);
-                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiçãoFinal"]);
+                                    cmd.Parameters.AddWithValue("@PosicaoFinal", row["PosiÇõÇœoFinal"]);
                                     cmd.Parameters.AddWithValue("@Status", row["Status"]);
                                     cmd.Parameters.AddWithValue("@Pontos", row["Pontos"]);
                                     cmd.Parameters.AddWithValue("@NomeGP", row["GrandPrix"]);

@@ -157,11 +157,25 @@ namespace ProjetoFBD
                         if (txtNationality != null) txtNationality.Text = row["Nacionalidade"]?.ToString() ?? "";
                         if (txtBase != null) txtBase.Text = row["Base"]?.ToString() ?? "";
                         if (txtTeamPrincipal != null) txtTeamPrincipal.Text = row["ChefeEquipa"]?.ToString() ?? "";
-                        if (txtTechnicalDirector != null) txtTechnicalDirector.Text = row["ChefeTécnico"]?.ToString() ?? "";
+                        if (txtTechnicalDirector != null)
+                        {
+                            string tech = row.Table.Columns.Contains("ChefeTecnico")
+                                ? row["ChefeTecnico"]?.ToString() ?? ""
+                                : row["ChefeTécnico"]?.ToString() ?? "";
+                            txtTechnicalDirector.Text = tech;
+                        }
                         if (txtDebutYear != null) txtDebutYear.Text = row["AnoEstreia"]?.ToString() ?? "";
                         if (txtChassisModel != null) txtChassisModel.Text = row["ModeloChassis"]?.ToString() ?? "";
                         if (txtPowerUnit != null) txtPowerUnit.Text = row["Power_Unit"]?.ToString() ?? "";
-                        if (txtReserveDrivers != null) txtReserveDrivers.Text = row["PilotosReserva"]?.ToString() ?? "";
+                        if (txtReserveDrivers != null)
+                        {
+                            string reserveList = row.Table.Columns.Contains("ReserveDrivers")
+                                ? row["ReserveDrivers"]?.ToString() ?? ""
+                                : "";
+                            if (string.IsNullOrWhiteSpace(reserveList))
+                                reserveList = row["PilotosReserva"]?.ToString() ?? "";
+                            txtReserveDrivers.Text = reserveList;
+                        }
                     }
                     else
                     {
