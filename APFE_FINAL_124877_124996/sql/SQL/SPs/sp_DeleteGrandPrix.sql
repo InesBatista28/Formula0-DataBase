@@ -1,4 +1,4 @@
-CREATE PROCEDURE sp_DeleteGrandPrix
+CREATE OR ALTER PROCEDURE sp_DeleteGrandPrix
     @NomeGP NVARCHAR(100)
 AS
 BEGIN

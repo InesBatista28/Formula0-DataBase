@@ -40,7 +40,6 @@ CREATE TABLE Membros_da_Equipa (
 	DataNascimento DATE NOT NULL,
 	Género CHAR(1) NOT NULL,
 	Função NVARCHAR(100) NOT NULL,
-	-- CORRIGIDO: ID_Equipa agora é NOT NULL
 	ID_Equipa INT NOT NULL,
 	CONSTRAINT FK_Membros_Equipa FOREIGN KEY (ID_Equipa) REFERENCES Equipa(ID_Equipa)
 );
@@ -60,7 +59,6 @@ CREATE TABLE Piloto (
 	ID_Piloto INT PRIMARY KEY IDENTITY(1,1),
 	NumeroPermanente INT UNIQUE NOT NULL,
 	Abreviação CHAR(3) UNIQUE NOT NULL,
-	-- CORRIGIDO: ID_Equipa agora é NOT NULL
 	ID_Equipa INT NOT NULL,
 	ID_Membro INT UNIQUE,
 	CONSTRAINT FK_Piloto_Equipa FOREIGN KEY (ID_Equipa) REFERENCES Equipa(ID_Equipa),

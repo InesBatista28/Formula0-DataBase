@@ -169,9 +169,12 @@ namespace ProjetoFBD
                 if (grid.Columns.Contains(key))
                 {
                     var col = grid.Columns[key];
-                    col.HeaderText = header;
-                    col.ReadOnly = readOnly;
-                    col.Visible = !hide;
+                    if (col != null)
+                    {
+                        col.HeaderText = header;
+                        col.ReadOnly = readOnly;
+                        col.Visible = !hide;
+                    }
                 }
             }
         }

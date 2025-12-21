@@ -148,7 +148,11 @@ namespace ProjetoFBD
                         // Force-hide password column
                         HideColumn(dgvStaff, "Password");
                         if (dgvStaff.Columns.Contains("Password"))
-                            dgvStaff.Columns["Password"].Visible = false;
+                        {
+                            var pwdCol = dgvStaff.Columns["Password"];
+                            if (pwdCol != null)
+                                pwdCol.Visible = false;
+                        }
                     }
                     catch (Exception colEx)
                     {
@@ -235,7 +239,9 @@ namespace ProjetoFBD
             {
                 if (grid.Columns.Contains(key))
                 {
-                    grid.Columns[key].HeaderText = header;
+                    var col = grid.Columns[key];
+                    if (col != null)
+                        col.HeaderText = header;
                 }
             }
         }

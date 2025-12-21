@@ -310,7 +310,10 @@ namespace ProjetoFBD
                 if (grid.Columns.Contains(key))
                 {
                     var col = grid.Columns[key];
-                    col.HeaderText = header;
+                    if (col != null)
+                    {
+                        col.HeaderText = header;
+                    }
                 }
             }
         }

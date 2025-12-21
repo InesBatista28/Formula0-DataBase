@@ -271,7 +271,38 @@ namespace ProjetoFBD
                     "Qualification",
                     "Race"
                 });
+                if (cmbSessionType.Items.Count > 0)
+                    cmbSessionType.SelectedIndex = 0;
                 dialog.Controls.Add(cmbSessionType);
+
+                Button btnOk = new Button
+                {
+                    Text = "OK",
+                    DialogResult = DialogResult.OK,
+                    Location = new Point(230, 110),
+                    Size = new Size(90, 30),
+                    BackColor = Color.FromArgb(220, 20, 20),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat
+                };
+                btnOk.FlatAppearance.BorderSize = 0;
+                dialog.Controls.Add(btnOk);
+
+                Button btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Location = new Point(330, 110),
+                    Size = new Size(90, 30),
+                    BackColor = Color.Gray,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat
+                };
+                btnCancel.FlatAppearance.BorderSize = 0;
+                dialog.Controls.Add(btnCancel);
+
+                dialog.AcceptButton = btnOk;
+                dialog.CancelButton = btnCancel;
 
                 if (dialog.ShowDialog() == DialogResult.OK && cmbSessionType.SelectedItem != null)
                 {
