@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
@@ -107,23 +107,25 @@ namespace ProjetoFBD
             return btn;
         }
 
-        private void LoadMemberData()
+                private void LoadMemberData()
         {
+            const string GeneroColumn = "G\u00e9nero";
+            const string FuncaoColumn = "Fun\u00e7\u00e3o";
             string connectionString = DbConfig.ConnectionString;
 
-            string query = @"
-                SELECT
-                    m.ID_Membro,
-                    m.Nome,
-                    m.Nacionalidade,
-                    m.DataNascimento,
-                    m.Genero,
-                    m.Funcao,
-                    m.ID_Equipa,
-                    e.Nome AS TeamName
-                FROM Membros_da_Equipa m
-                INNER JOIN Equipa e ON m.ID_Equipa = e.ID_Equipa
-                ORDER BY m.Nome ASC";
+            string query =
+                $"SELECT\n" +
+                $"    m.ID_Membro,\n" +
+                $"    m.Nome,\n" +
+                $"    m.Nacionalidade,\n" +
+                $"    m.DataNascimento,\n" +
+                $"    m.[{GeneroColumn}] AS Genero,\n" +
+                $"    m.[{FuncaoColumn}] AS Funcao,\n" +
+                $"    m.ID_Equipa,\n" +
+                $"    e.Nome AS TeamName\n" +
+                $"FROM Membros_da_Equipa m\n" +
+                $"INNER JOIN Equipa e ON m.ID_Equipa = e.ID_Equipa\n" +
+                $"ORDER BY m.Nome ASC";
 
             try
             {
@@ -134,41 +136,7 @@ namespace ProjetoFBD
                 if (dgvMembers != null && memberTable != null)
                 {
                     dgvMembers.DataSource = memberTable;
-
-                    var cols = dgvMembers.Columns;
-                    if (cols != null && cols.Count > 0)
-                    {
-                        if (cols.Contains("ID_Membro"))
-                        {
-                            cols["ID_Membro"].HeaderText = "Member ID";
-                            cols["ID_Membro"].ReadOnly = true;
-                            cols["ID_Membro"].Width = 80;
-                        }
-
-                        if (cols.Contains("Nome"))
-                            cols["Nome"].HeaderText = "Name";
-
-                        if (cols.Contains("Nacionalidade"))
-                            cols["Nacionalidade"].HeaderText = "Nationality";
-
-                        if (cols.Contains("DataNascimento"))
-                            cols["DataNascimento"].HeaderText = "Birth Date";
-
-                        if (cols.Contains("Genero"))
-                            cols["Genero"].HeaderText = "Gender";
-
-                        if (cols.Contains("Funcao"))
-                            cols["Funcao"].HeaderText = "Role";
-
-                        if (cols.Contains("ID_Equipa"))
-                            cols["ID_Equipa"].Visible = false;
-
-                        if (cols.Contains("TeamName"))
-                        {
-                            cols["TeamName"].HeaderText = "Team";
-                            cols["TeamName"].ReadOnly = true;
-                        }
-                    }
+                    ApplyMemberHeaders(dgvMembers);
                 }
                 else
                 {
@@ -179,6 +147,32 @@ namespace ProjetoFBD
             {
                 MessageBox.Show($"Error loading member data: {ex.Message}\n\nStackTrace: {ex.StackTrace}", "Database Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ApplyMemberHeaders(DataGridView grid)
+        {
+            var mappings = new (string key, string header, bool hide, bool readOnly)[]
+            {
+                ("ID_Membro", "Member ID", false, true),
+                ("Nome", "Name", false, false),
+                ("Nacionalidade", "Nationality", false, false),
+                ("DataNascimento", "Birth Date", false, false),
+                ("Genero", "Gender", false, false),
+                ("Funcao", "Role", false, false),
+                ("ID_Equipa", "Team ID", true, false),
+                ("TeamName", "Team", false, true)
+            };
+
+            foreach (var (key, header, hide, readOnly) in mappings)
+            {
+                if (grid.Columns.Contains(key))
+                {
+                    var col = grid.Columns[key];
+                    col.HeaderText = header;
+                    col.ReadOnly = readOnly;
+                    col.Visible = !hide;
+                }
             }
         }
 
@@ -205,8 +199,8 @@ namespace ProjetoFBD
                         updateCmd.Parameters.Add("@Nome", SqlDbType.NVarChar, 100, "Nome");
                         updateCmd.Parameters.Add("@Nacionalidade", SqlDbType.NVarChar, 100, "Nacionalidade");
                         updateCmd.Parameters.Add("@DataNascimento", SqlDbType.Date, 0, "DataNascimento");
-                        updateCmd.Parameters.Add("@Genero", SqlDbType.NVarChar, 10, "Genero");
-                        updateCmd.Parameters.Add("@Funcao", SqlDbType.NVarChar, 100, "Funcao");
+                        updateCmd.Parameters.Add("@GÃ©nero", SqlDbType.NVarChar, 10, "GÃ©nero");
+                        updateCmd.Parameters.Add("@FunÃ§Ã£o", SqlDbType.NVarChar, 100, "FunÃ§Ã£o");
                         updateCmd.Parameters.Add("@ID_Equipa", SqlDbType.Int, 0, "ID_Equipa");
                         dataAdapter.UpdateCommand = updateCmd;
 
@@ -218,8 +212,8 @@ namespace ProjetoFBD
                         insertCmd.Parameters.Add("@Nome", SqlDbType.NVarChar, 100, "Nome");
                         insertCmd.Parameters.Add("@Nacionalidade", SqlDbType.NVarChar, 100, "Nacionalidade");
                         insertCmd.Parameters.Add("@DataNascimento", SqlDbType.Date, 0, "DataNascimento");
-                        insertCmd.Parameters.Add("@Genero", SqlDbType.NVarChar, 10, "Genero");
-                        insertCmd.Parameters.Add("@Funcao", SqlDbType.NVarChar, 100, "Funcao");
+                        insertCmd.Parameters.Add("@GÃ©nero", SqlDbType.NVarChar, 10, "GÃ©nero");
+                        insertCmd.Parameters.Add("@FunÃ§Ã£o", SqlDbType.NVarChar, 100, "FunÃ§Ã£o");
                         insertCmd.Parameters.Add("@ID_Equipa", SqlDbType.Int, 0, "ID_Equipa");
                         SqlParameter outId = new SqlParameter("@ID_Membro", SqlDbType.Int)
                         {
@@ -322,7 +316,7 @@ namespace ProjetoFBD
                             string gender = inputForm.InputValue.Trim().ToUpper();
                             if (gender == "M" || gender == "F")
                             {
-                                newRow["Genero"] = gender;
+                                newRow["GÃ©nero"] = gender;
                             }
                             else
                             {
@@ -345,7 +339,7 @@ namespace ProjetoFBD
                         if (inputForm.ShowDialog() == DialogResult.OK &&
                             !string.IsNullOrWhiteSpace(inputForm.InputValue))
                         {
-                            newRow["Funcao"] = inputForm.InputValue.Trim();
+                            newRow["FunÃ§Ã£o"] = inputForm.InputValue.Trim();
                         }
                         else
                         {
@@ -418,7 +412,7 @@ namespace ProjetoFBD
             if (userRole == "Staff" && dgvMembers != null && dgvMembers.SelectedRows.Count > 0 && memberTable != null)
             {
                 DialogResult dialogResult = MessageBox.Show(
-                    "Are you sure you want to delete the selected member(s)?\n\nAll contracts and pilots associated with this member will also be deleted!",
+                    "Are you sure you want to delete the selected member(s)?",
                     "Confirm Deletion",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
@@ -625,6 +619,17 @@ namespace ProjetoFBD
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

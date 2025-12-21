@@ -1,0 +1,6 @@
+CREATE PROCEDURE sp_DeleteGrandPrix
+    @NomeGP NVARCHAR(100)
+AS
+BEGIN
+    DELETE FROM Grande_Prémio WHERE NomeGP = @NomeGP;
+END
