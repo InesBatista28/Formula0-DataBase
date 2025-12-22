@@ -14,16 +14,6 @@ Principais características e decisões de projeto:
 - Procedimentos armazenados para operações complexas (por exemplo, computar a tabela de pontuação após uma corrida) e triggers para manter campos derivados atualizados.
 - Utilização de transações para operações de escrita críticas (registo de resultados, aplicação de penalizações) para manter a integridade dos dados.
 
-## Demo
-Caso o repositório esteja a ser visualizado localmente, o ficheiro de vídeo encontra-se em `APF_124877_124996/Demo.mp4`.
-
-
-
-<p align="center">
-	<a href="APF_124877_124996/Demo.mp4">
-		<img src="APF_124877_124996/demo.gif" alt="Demo GIF" width="720" />
-	</a>
-</p>
 
 
 
