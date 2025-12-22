@@ -89,7 +89,7 @@ VALUES
 ('Toto Wolff', 'Austrian', '1972-01-12', 'M', 'Team Chief', 5),
 ('James Allison', 'British', '1968-02-22', 'M', 'Technical Chief', 5),
 
--- 6. Red Bull Racing (ID_Equipa = 6)
+-- Red Bull Racing 
 ('Max Verstappen', 'Dutch', '1997-09-30', 'M', 'Driver', 6),
 ('Yuki Tsunoda', 'Japanese', '2000-05-11', 'M', 'Driver', 6),
 ('Laurent Mekies', 'French', '1977-04-28', 'M', 'Team Chief', 6),

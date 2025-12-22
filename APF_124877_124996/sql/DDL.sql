@@ -106,7 +106,7 @@ CREATE TABLE Resultados (
 	CONSTRAINT FK_Resultado_Piloto FOREIGN KEY (ID_Piloto) REFERENCES Piloto(ID_Piloto)
 );
 
--- Adicionado NomeGP e FK composta
+
 CREATE TABLE Penalizações (
 	ID_Penalização INT PRIMARY KEY IDENTITY(1,1),
 	TipoPenalização NVARCHAR(100) NOT NULL,

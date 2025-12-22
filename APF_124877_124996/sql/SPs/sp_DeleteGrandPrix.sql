@@ -7,13 +7,11 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Remover dependências ligadas ao GP
         DELETE FROM Pitstop WHERE NomeGP = @NomeGP;
         DELETE FROM Penalizações WHERE NomeGP = @NomeGP;
         DELETE FROM Resultados WHERE NomeGP = @NomeGP;
         DELETE FROM Sessões WHERE NomeGP = @NomeGP;
 
-        -- Por fim, remover o Grande Prémio
         DELETE FROM Grande_Prémio WHERE NomeGP = @NomeGP;
 
         COMMIT TRANSACTION;
