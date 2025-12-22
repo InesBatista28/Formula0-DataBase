@@ -1,0 +1,114 @@
+--- DDL_INICIAL.sql
++++ DDL_FINAL.sql
+@@ -22,6 +22,10 @@
+ 	ChefeEquipa NVARCHAR(100) NOT NULL,
++	-- CAMPO ADICIONADO: ChefeTécnico
++	-- Motivo: Em equipas de F1, o chefe de equipa (responsável administrativo/gestão)
++	-- e o chefe técnico (responsável pela estratégia técnica) são funções distintas.
++	-- A separação permite rastreabilidade clara da hierarquia e responsabilidades.
+ 	ChefeTécnico NVARCHAR(100) NOT NULL,
+ 	AnoEstreia INT NOT NULL,
+ 	ModeloChassis NVARCHAR(100) NOT NULL,
+@@ -37,7 +39,9 @@
+ 	Género CHAR(1) NOT NULL,
+ 	Função NVARCHAR(100) NOT NULL,
+-	ID_Equipa INT,
++	-- CORRIGIDO: ID_Equipa agora é NOT NULL
++	-- Motivo: A integridade referencial exige que todo membro de equipa esteja
++	-- obrigatoriamente associado a uma equipa. Deixar nullable criaria registos órfãos
++	-- (membros sem equipa), violando a lógica de negócio da F1.
++	-- Este campo não pode ser NULL sem comprometer a estrutura da base de dados.
+ 	ID_Equipa INT NOT NULL,
+ 	CONSTRAINT FK_Membros_Equipa FOREIGN KEY (ID_Equipa) REFERENCES Equipa(ID_Equipa)
+ );
+ 
+@@ -51,7 +55,9 @@
+ 	ID_Piloto INT PRIMARY KEY IDENTITY(1,1),
+ 	NumeroPermanente INT UNIQUE NOT NULL,
+ 	Abreviação CHAR(3) UNIQUE NOT NULL,
+-	ID_Equipa INT,
++	-- CORRIGIDO: ID_Equipa agora é NOT NULL
++	-- Motivo: No campeonato de F1, um piloto deve estar sempre associado a uma equipa
++	-- (embora possa mudar de equipa entre estações). Deixar nullable causaria inconsistência:
++	-- não poderia haver um piloto sem equipa. Esta constraint garante validade dos dados.
++	ID_Equipa INT NOT NULL,
+ 	ID_Membro INT UNIQUE,
+ 	CONSTRAINT FK_Piloto_Equipa FOREIGN KEY (ID_Equipa) REFERENCES Equipa(ID_Equipa),
+ 	CONSTRAINT FK_Piloto_Membro FOREIGN KEY (ID_Membro) REFERENCES Membros_da_Equipa(ID_Membro)
+@@ -63,11 +69,14 @@
+ 	PontosPiloto INT,
+ 	PontosEquipa INT,
+ 	PosiçãoPiloto INT,
+ 	PosiçãoEquipa INT
+ );
+ 
++-- CORRIGIDO: PRIMARY KEY composta (NomeGP, NomeSessão)
++-- Motivo: Um mesmo nome de sessão (ex: "Qualificação", "Corrida") repete-se
++-- em múltiplos Grandes Prémios. Uma PK simples (NomeSessão) criaria conflitos.
++-- A chave composta garante unicidade em cada Grande Prémio e permite dados históricos consistentes.
+ CREATE TABLE Sessões (
+-	NomeSessão NVARCHAR(100) PRIMARY KEY,
++	NomeSessão NVARCHAR(100),
+ 	Estado NVARCHAR(50),
+ 	CondiçõesPista NVARCHAR(50),
+ 	NomeGP NVARCHAR(100) NOT NULL,
++	CONSTRAINT PK_Sessoes PRIMARY KEY (NomeGP, NomeSessão),
+ 	CONSTRAINT FK_Sessao_GP FOREIGN KEY (NomeGP) REFERENCES Grande_Prémio(NomeGP)
+ );
+ 
++-- CORRIGIDO: Adicionado NomeGP e FK composta para integridade referencial
++-- Motivo: Cada resultado pertence a uma sessão específica de um Grande Prémio específico.
++-- Sem NomeGP, era impossível restaurar o contexto completo (qual Grande Prémio gerou este resultado).
++-- A FK composta (NomeGP, NomeSessão) força integridade referencial com a PK composta de Sessões.
+ CREATE TABLE Resultados (
+ 	ID_Resultado INT PRIMARY KEY IDENTITY(1,1),
+ 	PosiçãoGrid INT,
+-	TempoFinal TIME,  -- TIME extracts the time part from a given time
++	TempoFinal TIME,
+ 	PosiçãoFinal INT,
+ 	Status NVARCHAR(50),
+ 	Pontos DECIMAL(5, 2),
+ 	NomeSessão NVARCHAR(100) NOT NULL,
++	NomeGP NVARCHAR(100) NOT NULL,
+ 	ID_Piloto INT NOT NULL,
+-	CONSTRAINT FK_Resultado_Sessao FOREIGN KEY (NomeSessão) REFERENCES Sessões(NomeSessão),
++	CONSTRAINT FK_Resultado_Sessao FOREIGN KEY (NomeGP, NomeSessão) REFERENCES Sessões(NomeGP, NomeSessão),
+ 	CONSTRAINT FK_Resultado_Piloto FOREIGN KEY (ID_Piloto) REFERENCES Piloto(ID_Piloto)
+ );
+ 
++-- CORRIGIDO: Adicionado NomeGP e FK composta
++-- Motivo: As penalizações são aplicadas durante uma sessão de um Grande Prémio específico.
++-- Rastrear apenas a sessão era insuficiente; era preciso contexto do Grande Prémio para
++-- análises e auditoria. A FK composta assegura que a penalização referencia uma sessão válida
++-- do Grande Prémio correspondente, evitando inconsistências cruzadas.
+ CREATE TABLE Penalizações (
+ 	ID_Penalização INT PRIMARY KEY IDENTITY(1,1),
+ 	TipoPenalização NVARCHAR(100) NOT NULL,
+ 	Motivo NVARCHAR(255),
+ 	NomeSessão NVARCHAR(100) NOT NULL,
++	NomeGP NVARCHAR(100) NOT NULL,
+ 	ID_Piloto INT NOT NULL,
+ 	ID_Resultados INT,
+-	CONSTRAINT FK_Penalizacao_Sessao FOREIGN KEY (NomeSessão) REFERENCES Sessões(NomeSessão),
++	CONSTRAINT FK_Penalizacao_Sessao FOREIGN KEY (NomeGP, NomeSessão) REFERENCES Sessões(NomeGP, NomeSessão),
+ 	CONSTRAINT FK_Penalizacao_Piloto FOREIGN KEY (ID_Piloto) REFERENCES Piloto(ID_Piloto),
+ 	CONSTRAINT FK_Penalizacao_Resultado FOREIGN KEY (ID_Resultados) REFERENCES Resultados(ID_Resultado)
+ );
+ 
++-- CORRIGIDO: Adicionado NomeGP e FK composta
++-- Motivo: Os pit stops ocorrem durante uma sessão de um Grande Prémio específico.
++-- Este contexto é crítico para análise de estratégia: diferentes GPs podem ter
++-- pit lanes com características distintas, afetando durações e decisões tácticas.
++-- A FK composta garante que cada pit stop referencia a sessão correta no GP certo.
+ CREATE TABLE Pitstop (
+ 	ID_Pitstop INT PRIMARY KEY IDENTITY(1,1),
+ 	NumeroVolta INT NOT NULL,
+ 	DuraçãoParagem TIME,
+ 	DuraçãoPitlane TIME,
+ 	NomeSessão NVARCHAR(100) NOT NULL,
++	NomeGP NVARCHAR(100) NOT NULL,
+ 	ID_Piloto INT NOT NULL,
+-	CONSTRAINT FK_Pitstop_Sessao FOREIGN KEY (NomeSessão) REFERENCES Sessões(NomeSessão),
++	CONSTRAINT FK_Pitstop_Sessao FOREIGN KEY (NomeGP, NomeSessão) REFERENCES Sessões(NomeGP, NomeSessão),
+ 	CONSTRAINT FK_Pitstop_Piloto FOREIGN KEY (ID_Piloto) REFERENCES Piloto(ID_Piloto)
+ );
