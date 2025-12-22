@@ -570,7 +570,7 @@ namespace ProjetoFBD
         private TextBox txtUsername = null!;
         private TextBox txtPassword = null!;
         private TextBox txtFullName = null!;
-        private ComboBox cmbRole = null!;
+        
         private TextBox txtNationality = null!;
         private DateTimePicker dtpBirthDate = null!;
         private ComboBox cmbTeam = null!;
@@ -637,18 +637,7 @@ namespace ProjetoFBD
             txtFullName = AddTextBox(y);
             y += 35;
 
-            // Role
-            AddLabel("Role:", y);
-            cmbRole = new ComboBox
-            {
-                Location = new Point(150, y),
-                Size = new Size(360, 25),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cmbRole.Items.AddRange(new string[] { "Staff", "Guest" });
-            cmbRole.SelectedIndex = 0;
-            this.Controls.Add(cmbRole);
-            y += 35;
+            // Role is fixed to "Staff"; no selection control shown
 
             // Nationality
             AddLabel("Nationality:", y);
@@ -862,7 +851,7 @@ namespace ProjetoFBD
             Username = txtUsername.Text.Trim();
             Password = txtPassword.Text.Trim();
             FullName = txtFullName.Text.Trim();
-            Role = cmbRole.SelectedItem?.ToString() ?? "Guest";
+            Role = "Staff";
             Nationality = string.IsNullOrWhiteSpace(txtNationality.Text) ? null : txtNationality.Text.Trim();
             BirthDate = dtpBirthDate.Value;
 
